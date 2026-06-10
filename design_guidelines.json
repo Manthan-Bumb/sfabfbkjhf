@@ -1,0 +1,95 @@
+{
+  "theme": "light",
+  "archetype": "Archetype 4 (Swiss & High-Contrast)",
+  "emotional_tone": "Objective, trustworthy, high-performance, clear, enterprise-grade",
+  "color_system": {
+    "background": "bg-white",
+    "surface": "bg-slate-50",
+    "primary": "bg-blue-600",
+    "primary_hover": "hover:bg-blue-700 hover:text-white",
+    "secondary_accent": "bg-slate-900 text-white",
+    "text_main": "text-slate-900",
+    "text_muted": "text-slate-500",
+    "border": "border-slate-200",
+    "forbidden_colors": ["#1B93A4", "#7351B7", "#9D4CDD"]
+  },
+  "typography": {
+    "font_family": {
+      "headings": "Outfit, sans-serif",
+      "body": "Manrope, sans-serif",
+      "import_instruction": "Import Outfit and Manrope from Google Fonts in index.html or global css"
+    },
+    "hierarchy": {
+      "h1": "text-5xl sm:text-6xl tracking-tighter font-bold",
+      "h2": "text-3xl sm:text-4xl tracking-tight font-semibold",
+      "h3": "text-xl sm:text-2xl font-semibold",
+      "h4": "text-lg font-medium",
+      "body": "text-base leading-relaxed",
+      "labels": "text-xs tracking-[0.2em] uppercase font-bold text-slate-500"
+    }
+  },
+  "spacing_and_layout": {
+    "philosophy": "Ultra-minimal bento grids with generous whitespace. Focus on data clarity and conversion.",
+    "container_padding": "p-8 md:p-12",
+    "grid_gaps": "gap-6 md:gap-8",
+    "border_radius": "rounded-sm",
+    "dashboards": "Strict grid hierarchy, dense and compact. 1px solid border-slate-200, no drop-shadows by default. Flat-rectangular components.",
+    "mobile_first": "Always stack content on mobile using grid-cols-1, expand on md and lg breakpoints."
+  },
+  "components": {
+    "hero_section": "Massive typography with a white background. Central bento-style search bar for Freight Search.",
+    "freight_search_bar": "Inputs for Pickup Location, Delivery Location, Weight, Parcel Type, Transport Mode. Prominent blue-600 'Search' button. Must be highly visible above the fold.",
+    "blurred_listings": "Public view courier cards. Content inside pricing/contact divs MUST have 'blur-md select-none' with a clear 'Log in to view actual rates' overlay CTA to drive B2B signups.",
+    "lead_generation_modal": "Shadcn Dialog. Includes a 60-min SLA countdown timer (red text when < 15 mins).",
+    "dashboard_cards": "Flat white background, border-slate-200, no shadow. Crisp edges."
+  },
+  "motion_and_interactions": {
+    "buttons": "transition-colors duration-200 ease-in-out",
+    "cards_hover": "hover:-translate-y-1 hover:shadow-lg transition-all duration-300 hover:border-blue-200",
+    "accessibility": "focus:ring-2 focus:ring-blue-600 focus:outline-none"
+  },
+  "media": {
+    "image_urls": {
+      "hero_background": {
+        "url": "https://images.pexels.com/photos/1427541/pexels-photo-1427541.jpeg",
+        "description": "Cargo containers at port - use as subtle background or in a bento feature box",
+        "category": "hero"
+      },
+      "courier_dashboard_banner": {
+        "url": "https://images.unsplash.com/photo-1703227373720-cff89520dd31",
+        "description": "Colorful shipping containers stack",
+        "category": "dashboard_banner"
+      },
+      "business_team": {
+        "url": "https://images.pexels.com/photos/12903168/pexels-photo-12903168.jpeg",
+        "description": "Professional team collaborating in office",
+        "category": "testimonials_or_about"
+      },
+      "partner_logos": [
+        {
+          "url": "https://images.unsplash.com/photo-1661347998423-b15d37d6f61e",
+          "description": "Samsung tech sponsor logo",
+          "category": "trust_signals"
+        },
+        {
+          "url": "https://images.unsplash.com/photo-1762340274481-73cde84f3374",
+          "description": "LinkedIn tech sponsor logo",
+          "category": "trust_signals"
+        }
+      ]
+    },
+    "icons_library": "lucide-react"
+  },
+  "instructions_to_main_agent": [
+    "Strictly adhere to the ultra-minimal Swiss style: Stark white backgrounds, subtle slate borders, electric blue primary color.",
+    "Implement 3 distinct Dashboard Layouts (Business, Courier, Admin).",
+    "Build the public landing page with a hero freight search calculator and 'blurred' listings to drive B2B signups (key differentiator).",
+    "Implement Freight Calculator logic (base + fuel + handling + insurance + GST).",
+    "Use 'Outfit' for all headings and 'Manrope' for body text. Do NOT use Inter for headings.",
+    "CRITICAL: Add 'data-testid' to ALL interactive elements (buttons, form inputs, links, tabs, modals) for automated testing.",
+    "Implement dual registration flows (Business vs Courier) with OTP verification mocked.",
+    "Never use raw transparent backgrounds over images for text areas; use glassmorphism (backdrop-blur-xl bg-white/70) or opaque blocks.",
+    "For the dashboards, favor dense information architecture, flat white cards with border-slate-200, avoiding heavy Vercel-like card shadows.",
+    "Include Trust signals: Verified Companies, Fast Delivery Network, Trusted Logistics Partners in the landing page."
+  ]
+}
