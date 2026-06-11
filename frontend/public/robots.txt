@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /business/dashboard
+Disallow: /courier/dashboard
+
+Sitemap: https://cargo-hub-134.preview.emergentagent.com/sitemap.xml

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Truck, LogOut } from "lucide-react";
+import NotificationsBell from "@/components/NotificationsBell";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -34,6 +35,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {user ? (
             <>
+              <NotificationsBell />
               <Link to={dashLink()}>
                 <Button data-testid="nav-dashboard-btn" variant="outline" className="border-slate-300">Dashboard</Button>
               </Link>

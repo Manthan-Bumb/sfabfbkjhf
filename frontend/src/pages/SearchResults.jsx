@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Lock } from "lucide-react";
 import { Link } from "react-router-dom";
+import SEO from "@/components/SEO";
 
 export default function SearchResults() {
   const [params] = useSearchParams();
@@ -43,6 +44,10 @@ export default function SearchResults() {
 
   return (
     <div className="bg-white min-h-screen">
+      <SEO
+        title={`Freight from ${params.get("pickup_city") || "India"} to ${params.get("delivery_city") || "anywhere"}`}
+        description={`Compare verified courier partners and freight rates for ${params.get("transport_mode") || "all transport modes"}. Logged-in businesses see live pricing.`}
+      />
       <Navbar />
       <section className="max-w-7xl mx-auto px-5 md:px-8 py-8 md:py-10 space-y-6">
         <FreightSearch compact />

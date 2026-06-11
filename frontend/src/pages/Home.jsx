@@ -7,6 +7,17 @@ import CourierCard from "@/components/CourierCard";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Zap, Building2, ArrowRight, Truck, Plane, Train } from "lucide-react";
+import SEO from "@/components/SEO";
+
+const ORGANIZATION_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "LogiMarket",
+  "url": "https://cargo-hub-134.preview.emergentagent.com/",
+  "description": "India's B2B Logistics Marketplace — verified courier partners across road, rail, air & express cargo.",
+  "areaServed": "IN",
+  "sameAs": []
+};
 
 export default function Home() {
   const [featured, setFeatured] = useState([]);
@@ -14,6 +25,12 @@ export default function Home() {
 
   return (
     <div className="bg-white">
+      <SEO
+        title="India's B2B Freight Marketplace"
+        description="Find verified courier and cargo partners across India in 60 seconds. Compare road, rail, air & express freight rates. GST + PAN verified network of 6,400+ partners."
+        canonical="https://cargo-hub-134.preview.emergentagent.com/"
+        schema={ORGANIZATION_SCHEMA}
+      />
       <Navbar />
 
       {/* Hero */}

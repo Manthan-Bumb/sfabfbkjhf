@@ -303,6 +303,10 @@ async def featured_couriers(user=Depends(get_current_user)):
 async def search_couriers(
     pickup_city: str = "",
     delivery_city: str = "",
+    pickup_pincode: str = "",
+    delivery_pincode: str = "",
+    pickup_state: str = "",
+    delivery_state: str = "",
     weight: float = 0,
     parcel_type: str = "",
     transport_mode: str = "",
@@ -321,6 +325,18 @@ async def search_couriers(
                 continue
         if delivery_city and cov:
             if delivery_city.lower() not in [x.lower() for x in cov.get("cities", [])]:
+                continue
+        if pickup_pincode and cov and cov.get("pincodes"):
+            if pickup_pincode not in cov["pincodes"]:
+                continue
+        if delivery_pincode and cov and cov.get("pincodes"):
+            if delivery_pincode not in cov["pincodes"]:
+                continue
+        if pickup_state and cov:
+            if pickup_state.lower() not in [x.lower() for x in cov.get("states", [])]:
+                continue
+        if delivery_state and cov:
+            if delivery_state.lower() not in [x.lower() for x in cov.get("states", [])]:
                 continue
         # Find a matching rate card
         rc_query = {"courier_id": c["id"]}
@@ -430,9 +446,8 @@ async def create_lead(data: LeadIn, user=Depends(require_user)):
         "created_at": now_iso(),
     }
     await db.leads.insert_one(lead)
-    # mock notification (logged in dashboard)
-    await db.notifications.insert_one({
-        "id": str(uuid.uuid4()),
+    # Multi-channel notifications (in-app real, others API-ready/MOCKED)
+    notif_base = {
         "user_id": data.courier_id,
         "type": "new_lead",
         "title": "New Logistics Lead Received",
@@ -440,8 +455,19 @@ async def create_lead(data: LeadIn, user=Depends(require_user)):
         "lead_id": lead_id,
         "read": False,
         "created_at": now_iso(),
-    })
+    }
+    # In-app (real)
+    await db.notifications.insert_one({**notif_base, "id": str(uuid.uuid4()), "channel": "in_app", "status": "delivered"})
+    # Email (MOCKED — logged only)
+    await db.notification_logs.insert_one({**notif_base, "id": str(uuid.uuid4()), "channel": "email", "status": "mocked", "to": courier.get("email")})
     logger.info(f"[MOCK EMAIL] To {courier.get('email')} — Subject: New Logistics Lead Received — Lead {lead_id}")
+    # WhatsApp (MOCKED — API-ready architecture)
+    await db.notification_logs.insert_one({**notif_base, "id": str(uuid.uuid4()), "channel": "whatsapp", "status": "mocked", "to": courier.get("mobile")})
+    logger.info(f"[MOCK WHATSAPP] To +91{courier.get('mobile')} — New Lead {lead_id}")
+    # SMS (MOCKED)
+    await db.notification_logs.insert_one({**notif_base, "id": str(uuid.uuid4()), "channel": "sms", "status": "mocked", "to": courier.get("mobile")})
+    # Push (MOCKED)
+    await db.notification_logs.insert_one({**notif_base, "id": str(uuid.uuid4()), "channel": "push", "status": "mocked", "to": data.courier_id})
     lead.pop("_id", None)
     return lead
 
@@ -537,7 +563,19 @@ async def put_coverage(data: CoverageIn, user=Depends(require_user)):
 
 @api.get("/notifications")
 async def get_notifications(user=Depends(require_user)):
-    return await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).limit(50).to_list(50)
+    items = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).limit(50).to_list(50)
+    unread = await db.notifications.count_documents({"user_id": user["id"], "read": False})
+    return {"items": items, "unread": unread}
+
+@api.post("/notifications/{nid}/read")
+async def mark_notif_read(nid: str, user=Depends(require_user)):
+    await db.notifications.update_one({"id": nid, "user_id": user["id"]}, {"$set": {"read": True}})
+    return {"success": True}
+
+@api.post("/notifications/read-all")
+async def mark_all_read(user=Depends(require_user)):
+    await db.notifications.update_many({"user_id": user["id"], "read": False}, {"$set": {"read": True}})
+    return {"success": True}
 
 
 # ============== Admin ==============
@@ -568,6 +606,11 @@ async def reject_courier(cid: str, user=Depends(require_user)):
     if user["role"] != "admin": raise HTTPException(403, "Forbidden")
     await db.users.update_one({"id": cid}, {"$set": {"admin_approved": False, "status": "rejected"}})
     return {"success": True}
+
+@api.get("/admin/notification-logs")
+async def admin_notification_logs(user=Depends(require_user)):
+    if user["role"] != "admin": raise HTTPException(403, "Forbidden")
+    return await db.notification_logs.find({}, {"_id": 0}).sort("created_at", -1).limit(200).to_list(200)
 
 @api.get("/admin/leads")
 async def admin_leads(user=Depends(require_user)):

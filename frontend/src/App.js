@@ -1,6 +1,7 @@
 import React from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { Toaster } from "sonner";
 import Home from "@/pages/Home";
@@ -23,22 +24,24 @@ const Protected = ({ role, children }) => {
 function App() {
   return (
     <div className="App">
-      <AuthProvider>
-        <BrowserRouter>
-          <Toaster richColors position="top-right" />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/search" element={<SearchResults />} />
-            <Route path="/auth/business" element={<BusinessAuth />} />
-            <Route path="/auth/courier" element={<CourierAuth />} />
-            <Route path="/auth/admin" element={<AdminAuth />} />
-            <Route path="/business/dashboard" element={<Protected role="business"><BusinessDashboard /></Protected>} />
-            <Route path="/courier/dashboard" element={<Protected role="courier"><CourierDashboard /></Protected>} />
-            <Route path="/admin/dashboard" element={<Protected role="admin"><AdminDashboard /></Protected>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+      <HelmetProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Toaster richColors position="top-right" />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/search" element={<SearchResults />} />
+              <Route path="/auth/business" element={<BusinessAuth />} />
+              <Route path="/auth/courier" element={<CourierAuth />} />
+              <Route path="/auth/admin" element={<AdminAuth />} />
+              <Route path="/business/dashboard" element={<Protected role="business"><BusinessDashboard /></Protected>} />
+              <Route path="/courier/dashboard" element={<Protected role="courier"><CourierDashboard /></Protected>} />
+              <Route path="/admin/dashboard" element={<Protected role="admin"><AdminDashboard /></Protected>} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </HelmetProvider>
     </div>
   );
 }
