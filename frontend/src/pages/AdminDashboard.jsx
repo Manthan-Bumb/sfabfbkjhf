@@ -64,7 +64,7 @@ export default function AdminDashboard() {
               return (
                 <button key={s.id} data-testid={`adm-nav-${s.id}`}
                   onClick={() => setSection(s.id)}
-                  className={`w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm transition-colors ${section === s.id ? "bg-blue-600 text-white" : "hover:bg-slate-100 text-slate-700"}`}>
+                  className={`w-full text-left flex items-center gap-2.5 px-3 py-2 rounded-sm text-sm transition-colors ${section === s.id ? "bg-orange-600 text-white" : "hover:bg-slate-100 text-slate-700"}`}>
                   <Icon className="w-4 h-4" /> {s.label}
                 </button>
               );
@@ -178,7 +178,7 @@ const Overview = ({ data }) => {
 };
 
 const Kpi = ({ label, v, icon, tone }) => {
-  const tones = { blue: "text-blue-600", amber: "text-amber-600", emerald: "text-emerald-600" };
+  const tones = { blue: "text-orange-600", amber: "text-amber-600", emerald: "text-emerald-600" };
   return (
     <div className="bg-white border border-slate-200 p-4 rounded-sm">
       <div className="flex items-center justify-between">

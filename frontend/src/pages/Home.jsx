@@ -12,7 +12,7 @@ import SEO from "@/components/SEO";
 const ORGANIZATION_SCHEMA = {
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "LogiMarket",
+  "name": "LogScanner",
   "url": "https://cargo-hub-134.preview.emergentagent.com/",
   "description": "India's B2B Logistics Marketplace — verified courier partners across road, rail, air & express cargo.",
   "areaServed": "IN",
@@ -41,15 +41,15 @@ export default function Home() {
             <div className="md:col-span-7">
               <div className="label-eyebrow">B2B Logistics Marketplace · India</div>
               <h1 className="font-display font-bold text-5xl sm:text-6xl lg:text-7xl tracking-tighter mt-4 leading-[1.05]">
-                Find verified freight<br />
-                partners in <span className="text-blue-600">60 seconds</span>.
+                Scan India's freight<br />
+                network in <span className="text-orange-600">60 seconds</span>.
               </h1>
               <p className="text-slate-600 text-lg mt-6 max-w-xl leading-relaxed">
                 Instant rates from 6,400+ couriers across India. Compare road, rail, air & express cargo — verified by GST, rated by businesses.
               </p>
               <div className="flex gap-3 mt-7">
                 <Link to="/auth/business?tab=register">
-                  <Button data-testid="hero-cta-business" className="bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-12 px-7 text-sm font-semibold">Sign Up as Business <ArrowRight className="w-4 h-4 ml-1.5" /></Button>
+                  <Button data-testid="hero-cta-business" className="bg-orange-600 hover:bg-orange-700 text-white rounded-sm h-12 px-7 text-sm font-semibold">Sign Up as Business <ArrowRight className="w-4 h-4 ml-1.5" /></Button>
                 </Link>
                 <Link to="/auth/courier?tab=register">
                   <Button data-testid="hero-cta-courier" variant="outline" className="rounded-sm h-12 px-7 border-slate-300 text-sm font-semibold">List as Partner</Button>
@@ -58,7 +58,7 @@ export default function Home() {
             </div>
             <div className="md:col-span-5 space-y-3">
               <div className="bg-slate-900 text-white p-6 rounded-sm">
-                <div className="text-[10px] tracking-[0.2em] uppercase text-blue-200 font-bold">Live Network</div>
+                <div className="text-[10px] tracking-[0.2em] uppercase text-orange-200 font-bold">Live Network</div>
                 <div className="mt-3 grid grid-cols-3 gap-3">
                   <div><div className="font-display text-3xl font-bold">6.4K</div><div className="text-xs text-slate-400">Couriers</div></div>
                   <div><div className="font-display text-3xl font-bold">28+</div><div className="text-xs text-slate-400">States</div></div>
@@ -66,7 +66,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="border border-slate-200 p-5 rounded-sm flex items-center gap-3">
-                <ShieldCheck className="w-5 h-5 text-blue-600" />
+                <ShieldCheck className="w-5 h-5 text-orange-600" />
                 <div className="text-sm"><span className="font-semibold">GST + PAN Verified</span> partners only</div>
               </div>
             </div>
@@ -85,8 +85,8 @@ export default function Home() {
           { icon: <Zap className="w-6 h-6" />, t: "Fast Delivery Network", d: "Air, Rail, Road & Express. Compare timelines side-by-side." },
           { icon: <Building2 className="w-6 h-6" />, t: "Trusted Logistics Partners", d: "BlueDart, DTDC, Gati, TCI, VRL and 6000+ regional fleets." },
         ].map((x) => (
-          <div key={x.t} className="border border-slate-200 p-7 rounded-sm hover:border-blue-300 transition-all">
-            <div className="w-11 h-11 bg-blue-50 text-blue-600 flex items-center justify-center rounded-sm">{x.icon}</div>
+          <div key={x.t} className="border border-slate-200 p-7 rounded-sm hover:border-orange-300 transition-all">
+            <div className="w-11 h-11 bg-orange-50 text-orange-600 flex items-center justify-center rounded-sm">{x.icon}</div>
             <div className="font-display font-semibold text-xl mt-4">{x.t}</div>
             <div className="text-slate-600 text-sm mt-2 leading-relaxed">{x.d}</div>
           </div>
@@ -106,8 +106,8 @@ export default function Home() {
               { i: <Train className="w-5 h-5" />, t: "Rail Cargo" },
               { i: <Zap className="w-5 h-5" />, t: "Express Delivery" },
             ].map((m) => (
-              <div key={m.t} className="bg-white border border-slate-200 p-5 rounded-sm flex flex-col gap-3 hover:border-blue-300">
-                <div className="text-blue-600">{m.i}</div>
+              <div key={m.t} className="bg-white border border-slate-200 p-5 rounded-sm flex flex-col gap-3 hover:border-orange-300">
+                <div className="text-orange-600">{m.i}</div>
                 <div className="font-semibold">{m.t}</div>
               </div>
             ))}
@@ -122,7 +122,7 @@ export default function Home() {
             <div className="label-eyebrow">Featured Partners</div>
             <h2 className="font-display font-bold text-3xl md:text-4xl tracking-tight mt-2">Top-rated couriers this week</h2>
           </div>
-          <Link to="/search" data-testid="featured-view-all" className="text-sm font-semibold text-blue-600 hover:text-blue-700">View all →</Link>
+          <Link to="/search" data-testid="featured-view-all" className="text-sm font-semibold text-orange-600 hover:text-orange-700">View all →</Link>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {featured.map(c => <CourierCard key={c.id} c={c} />)}
@@ -133,11 +133,11 @@ export default function Home() {
       <section className="bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-5 md:px-8 py-16 flex flex-col md:flex-row items-start justify-between gap-8">
           <div>
-            <div className="text-[10px] tracking-[0.2em] uppercase text-blue-300 font-bold">Get Started</div>
+            <div className="text-[10px] tracking-[0.2em] uppercase text-orange-300 font-bold">Get Started</div>
             <h2 className="font-display font-bold text-4xl md:text-5xl tracking-tight mt-3 max-w-xl">Instant freight rates. Verified leads. Zero spam.</h2>
           </div>
           <div className="flex gap-3">
-            <Link to="/auth/business?tab=register"><Button data-testid="cta-business" className="bg-blue-600 hover:bg-blue-700 rounded-sm h-12 px-7 text-white">Get Instant Freight Rates</Button></Link>
+            <Link to="/auth/business?tab=register"><Button data-testid="cta-business" className="bg-orange-600 hover:bg-orange-700 rounded-sm h-12 px-7 text-white">Get Instant Freight Rates</Button></Link>
             <Link to="/auth/courier?tab=register"><Button data-testid="cta-partner" variant="outline" className="rounded-sm h-12 px-7 bg-transparent border-slate-700 hover:bg-slate-800 hover:text-white text-white">Become a Partner</Button></Link>
           </div>
         </div>

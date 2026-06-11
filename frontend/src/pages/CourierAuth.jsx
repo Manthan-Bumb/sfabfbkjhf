@@ -62,7 +62,7 @@ export default function CourierAuth() {
           <TabsContent value="login" className="space-y-4 mt-6">
             <div><Label className="label-eyebrow">Email</Label><Input data-testid="cp-login-email" type="email" className="rounded-sm mt-1.5 border-slate-300" value={li.email} onChange={e => setLi({...li, email: e.target.value})} /></div>
             <div><Label className="label-eyebrow">Password</Label><Input data-testid="cp-login-password" type="password" className="rounded-sm mt-1.5 border-slate-300" value={li.password} onChange={e => setLi({...li, password: e.target.value})} /></div>
-            <Button data-testid="cp-login-submit" onClick={doLogin} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-11">Login</Button>
+            <Button data-testid="cp-login-submit" onClick={doLogin} className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-sm h-11">Login</Button>
             <div className="text-xs text-slate-500 pt-2 text-center">Demo partner: <code>bluedartexpress@partner.in</code> / <code>partner@123</code></div>
           </TabsContent>
 
@@ -78,12 +78,12 @@ export default function CourierAuth() {
               <div className="flex-1"><Label className="label-eyebrow">Mobile</Label><Input data-testid="cp-reg-mobile" className="rounded-sm mt-1.5 border-slate-300" value={reg.mobile} onChange={e => setR("mobile", e.target.value)} /></div>
               <Button data-testid="cp-reg-send-otp" type="button" variant="outline" className="rounded-sm border-slate-300" onClick={sendOtp}>Send OTP</Button>
             </div>
-            {otpSent && <div><Label className="label-eyebrow">OTP {devOtp && <span className="text-blue-600 normal-case">(dev: {devOtp})</span>}</Label><Input data-testid="cp-reg-otp" className="rounded-sm mt-1.5 border-slate-300" value={reg.otp} onChange={e => setR("otp", e.target.value)} /></div>}
+            {otpSent && <div><Label className="label-eyebrow">OTP {devOtp && <span className="text-orange-600 normal-case">(dev: {devOtp})</span>}</Label><Input data-testid="cp-reg-otp" className="rounded-sm mt-1.5 border-slate-300" value={reg.otp} onChange={e => setR("otp", e.target.value)} /></div>}
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="label-eyebrow">Years Exp.</Label><Input data-testid="cp-reg-years" type="number" className="rounded-sm mt-1.5 border-slate-300" value={reg.years_experience} onChange={e => setR("years_experience", e.target.value)} /></div>
               <div><Label className="label-eyebrow">Password</Label><Input data-testid="cp-reg-password" type="password" className="rounded-sm mt-1.5 border-slate-300" value={reg.password} onChange={e => setR("password", e.target.value)} /></div>
             </div>
-            <Button data-testid="cp-reg-submit" onClick={doRegister} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-11 mt-2">Create Partner Account</Button>
+            <Button data-testid="cp-reg-submit" onClick={doRegister} className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-sm h-11 mt-2">Create Partner Account</Button>
           </TabsContent>
         </Tabs>
       </section>

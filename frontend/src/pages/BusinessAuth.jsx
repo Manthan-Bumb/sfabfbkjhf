@@ -66,7 +66,7 @@ export default function BusinessAuth() {
           <TabsContent value="login" className="space-y-4 mt-6">
             <div><Label className="label-eyebrow">Email</Label><Input data-testid="biz-login-email" type="email" className="rounded-sm mt-1.5 border-slate-300" value={li.email} onChange={e => setLi({...li, email: e.target.value})} /></div>
             <div><Label className="label-eyebrow">Password</Label><Input data-testid="biz-login-password" type="password" className="rounded-sm mt-1.5 border-slate-300" value={li.password} onChange={e => setLi({...li, password: e.target.value})} /></div>
-            <Button data-testid="biz-login-submit" onClick={doLogin} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-11">Login</Button>
+            <Button data-testid="biz-login-submit" onClick={doLogin} className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-sm h-11">Login</Button>
           </TabsContent>
 
           <TabsContent value="register" className="space-y-3 mt-6">
@@ -79,12 +79,12 @@ export default function BusinessAuth() {
               <Button data-testid="biz-reg-send-otp" type="button" variant="outline" className="rounded-sm border-slate-300" onClick={sendOtp}>Send OTP</Button>
             </div>
             {otpSent && (
-              <div><Label className="label-eyebrow">OTP {devOtp && <span className="text-blue-600 normal-case">(dev: {devOtp})</span>}</Label>
+              <div><Label className="label-eyebrow">OTP {devOtp && <span className="text-orange-600 normal-case">(dev: {devOtp})</span>}</Label>
                 <Input data-testid="biz-reg-otp" className="rounded-sm mt-1.5 border-slate-300" value={reg.otp} onChange={e => setR("otp", e.target.value)} />
               </div>
             )}
             <div><Label className="label-eyebrow">Password</Label><Input data-testid="biz-reg-password" type="password" className="rounded-sm mt-1.5 border-slate-300" value={reg.password} onChange={e => setR("password", e.target.value)} /></div>
-            <Button data-testid="biz-reg-submit" onClick={doRegister} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-11 mt-2">Create Business Account</Button>
+            <Button data-testid="biz-reg-submit" onClick={doRegister} className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-sm h-11 mt-2">Create Business Account</Button>
           </TabsContent>
         </Tabs>
       </section>

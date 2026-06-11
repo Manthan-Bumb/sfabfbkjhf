@@ -724,14 +724,19 @@ async def root():
 # ============== Seed ==============
 @app.on_event("startup")
 async def seed_db():
+    # Admin email migration: rename old logimarket admin to logscanner
+    await db.users.update_one(
+        {"role": "admin", "email": "admin@logimarket.in"},
+        {"$set": {"email": "admin@logscanner.in", "company_name": "LogScanner Admin"}}
+    )
     # Admin
     if not await db.users.find_one({"role": "admin"}):
         await db.users.insert_one({
             "id": str(uuid.uuid4()),
             "role": "admin",
-            "company_name": "Marketplace Admin",
+            "company_name": "LogScanner Admin",
             "contact_person": "Admin",
-            "email": "admin@logimarket.in",
+            "email": "admin@logscanner.in",
             "mobile": "9999999999",
             "password": hash_password("admin@123"),
             "status": "active",

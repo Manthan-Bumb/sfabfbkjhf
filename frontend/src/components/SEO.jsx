@@ -2,7 +2,7 @@ import React from "react";
 import { Helmet } from "react-helmet-async";
 
 export default function SEO({ title, description, canonical, schema }) {
-  const t = title ? `${title} · LogiMarket` : "LogiMarket — India's B2B Freight Marketplace";
+  const t = title ? `${title} · LogScanner` : "LogScanner — India's B2B Freight Marketplace";
   const d = description || "Find verified courier and cargo partners across India in 60 seconds. Compare road, rail, air & express freight rates. GST + PAN verified network.";
   return (
     <Helmet>

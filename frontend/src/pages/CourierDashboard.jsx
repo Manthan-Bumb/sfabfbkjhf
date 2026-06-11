@@ -126,7 +126,7 @@ export default function CourierDashboard() {
                 <Field2 label="Min Charge ₹"><Input type="number" className="rounded-sm border-slate-300" value={rcForm.min_charge} onChange={e => setRcForm({...rcForm, min_charge: e.target.value})} /></Field2>
                 <Field2 label="Timeline"><Input className="rounded-sm border-slate-300" value={rcForm.delivery_timeline} onChange={e => setRcForm({...rcForm, delivery_timeline: e.target.value})} /></Field2>
               </div>
-              <Button data-testid="rc-add-btn" onClick={addRc} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-sm">Add Rate Card</Button>
+              <Button data-testid="rc-add-btn" onClick={addRc} className="mt-4 bg-orange-600 hover:bg-orange-700 text-white rounded-sm">Add Rate Card</Button>
             </div>
 
             <div className="border border-slate-200 rounded-sm overflow-hidden">
@@ -161,7 +161,7 @@ export default function CourierDashboard() {
 
 const Stat = ({ label, v, icon }) => (
   <div className="border border-slate-200 p-5 rounded-sm">
-    <div className="flex items-center justify-between"><div className="label-eyebrow">{label}</div><div className="text-blue-600">{icon}</div></div>
+    <div className="flex items-center justify-between"><div className="label-eyebrow">{label}</div><div className="text-orange-600">{icon}</div></div>
     <div className="font-display font-bold text-3xl mt-2">{v}</div>
   </div>
 );
@@ -174,7 +174,7 @@ const CovBlock = ({ title, items, onAdd, onRemove, placeholder, testid }) => {
       <div className="font-display font-semibold text-lg mb-3">{title}</div>
       <div className="flex gap-2">
         <Input data-testid={`${testid}-input`} placeholder={placeholder} className="rounded-sm border-slate-300" value={v} onChange={e => setV(e.target.value)} />
-        <Button data-testid={`${testid}-add`} onClick={() => { if (v) { onAdd(v); setV(""); } }} className="bg-blue-600 hover:bg-blue-700 text-white rounded-sm">Add</Button>
+        <Button data-testid={`${testid}-add`} onClick={() => { if (v) { onAdd(v); setV(""); } }} className="bg-orange-600 hover:bg-orange-700 text-white rounded-sm">Add</Button>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {items.map(i => <Badge key={i} variant="outline" data-testid={`${testid}-item-${i}`} onClick={() => onRemove(i)} className="rounded-sm border-slate-300 cursor-pointer hover:bg-slate-100 px-3 py-1">{i} ×</Badge>)}

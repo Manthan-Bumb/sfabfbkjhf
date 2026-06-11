@@ -80,7 +80,7 @@ export default function BusinessDashboard() {
 
 const Stat = ({ label, value, icon }) => (
   <div className="border border-slate-200 p-5 rounded-sm">
-    <div className="flex items-center justify-between"><div className="label-eyebrow">{label}</div><div className="text-blue-600">{icon}</div></div>
+    <div className="flex items-center justify-between"><div className="label-eyebrow">{label}</div><div className="text-orange-600">{icon}</div></div>
     <div className="font-display font-bold text-3xl mt-2">{value}</div>
   </div>
 );
