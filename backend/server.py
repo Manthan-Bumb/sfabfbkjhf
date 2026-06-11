@@ -370,6 +370,7 @@ async def search_couriers(
 def _calc_total(rc: Dict, weight: float) -> Dict:
     pricing_type = rc.get("pricing_type", "per_kg")
     base = rc.get("base_rate", 0)
+    sub = 0.0
     if pricing_type == "per_kg":
         sub = base * max(weight, 1)
     elif pricing_type == "fixed":

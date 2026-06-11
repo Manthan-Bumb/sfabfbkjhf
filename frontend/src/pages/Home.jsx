@@ -84,8 +84,8 @@ export default function Home() {
           { icon: <ShieldCheck className="w-6 h-6" />, t: "Verified Companies", d: "Every partner verified via GST & PAN. Bid for trust, not noise." },
           { icon: <Zap className="w-6 h-6" />, t: "Fast Delivery Network", d: "Air, Rail, Road & Express. Compare timelines side-by-side." },
           { icon: <Building2 className="w-6 h-6" />, t: "Trusted Logistics Partners", d: "BlueDart, DTDC, Gati, TCI, VRL and 6000+ regional fleets." },
-        ].map((x, i) => (
-          <div key={i} className="border border-slate-200 p-7 rounded-sm hover:border-blue-300 transition-all">
+        ].map((x) => (
+          <div key={x.t} className="border border-slate-200 p-7 rounded-sm hover:border-blue-300 transition-all">
             <div className="w-11 h-11 bg-blue-50 text-blue-600 flex items-center justify-center rounded-sm">{x.icon}</div>
             <div className="font-display font-semibold text-xl mt-4">{x.t}</div>
             <div className="text-slate-600 text-sm mt-2 leading-relaxed">{x.d}</div>
@@ -105,8 +105,8 @@ export default function Home() {
               { i: <Plane className="w-5 h-5" />, t: "Air Cargo" },
               { i: <Train className="w-5 h-5" />, t: "Rail Cargo" },
               { i: <Zap className="w-5 h-5" />, t: "Express Delivery" },
-            ].map((m, i) => (
-              <div key={i} className="bg-white border border-slate-200 p-5 rounded-sm flex flex-col gap-3 hover:border-blue-300">
+            ].map((m) => (
+              <div key={m.t} className="bg-white border border-slate-200 p-5 rounded-sm flex flex-col gap-3 hover:border-blue-300">
                 <div className="text-blue-600">{m.i}</div>
                 <div className="font-semibold">{m.t}</div>
               </div>
