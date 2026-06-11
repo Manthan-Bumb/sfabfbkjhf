@@ -7,7 +7,7 @@ import { Link } from "react-router-dom";
 export default function CourierCard({ c, onAction }) {
   const locked = c.locked;
   return (
-    <div data-testid={`courier-card-${c.id}`} className="border border-slate-200 hover:border-orange-300 transition-all rounded-sm bg-white p-5 hover:-translate-y-0.5 hover:shadow-md duration-300">
+    <div data-testid={`courier-card-${c.id}`} className="border border-slate-200 hover:border-blue-300 transition-all rounded-sm bg-white p-5 hover:-translate-y-0.5 hover:shadow-md duration-300">
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
@@ -25,7 +25,7 @@ export default function CourierCard({ c, onAction }) {
           </div>
         </div>
         <div className="flex gap-1">
-          {c.is_premium && <Badge className="bg-orange-600 text-white rounded-sm text-[10px]">PREMIUM</Badge>}
+          {c.is_premium && <Badge className="bg-blue-600 text-white rounded-sm text-[10px]">PREMIUM</Badge>}
           {c.is_featured && <Badge variant="outline" className="rounded-sm border-slate-300 text-[10px]">FEATURED</Badge>}
         </div>
       </div>
@@ -64,7 +64,7 @@ export default function CourierCard({ c, onAction }) {
         ) : (
           <div className="flex flex-col gap-1.5">
             <Button data-testid={`callback-btn-${c.id}`} size="sm" variant="outline" className="rounded-sm border-slate-300" onClick={() => onAction?.(c, "callback")}>Request Callback</Button>
-            <Button data-testid={`quote-btn-${c.id}`} size="sm" className="bg-orange-600 hover:bg-orange-700 text-white rounded-sm" onClick={() => onAction?.(c, "quote")}>Get Quote</Button>
+            <Button data-testid={`quote-btn-${c.id}`} size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-sm" onClick={() => onAction?.(c, "quote")}>Get Quote</Button>
           </div>
         )}
       </div>

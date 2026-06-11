@@ -56,7 +56,7 @@ export default function SearchResults() {
             <div className="flex items-center gap-3"><Lock className="w-4 h-4 text-amber-700" />
               <div className="text-sm text-amber-900"><b>Prices hidden.</b> Login as a verified business to see live rates and contact partners.</div>
             </div>
-            <Link to="/auth/business" className="text-sm font-semibold text-orange-600">Login →</Link>
+            <Link to="/auth/business" className="text-sm font-semibold text-blue-600">Login →</Link>
           </div>
         )}
 

@@ -121,7 +121,7 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
               <Label className="label-eyebrow">Special Notes</Label>
               <Textarea data-testid="lead-notes" value={form.notes} onChange={e => set("notes", e.target.value)} className="rounded-sm border-slate-300 mt-1.5" rows={3} />
             </div>
-            <Button data-testid="lead-submit-btn" disabled={submitting} onClick={submit} className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-sm h-11">
+            <Button data-testid="lead-submit-btn" disabled={submitting} onClick={submit} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-11">
               {submitting ? "Sending..." : `Submit ${action === "quote" ? "Quote Request" : "Callback Request"}`}
             </Button>
           </div>

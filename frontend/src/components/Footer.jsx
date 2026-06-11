@@ -6,8 +6,8 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-5 md:px-8 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         <div>
           <div className="flex items-center gap-2">
-            <img src="https://customer-assets.emergentagent.com/job_cargo-hub-134/artifacts/b5lfewnq_logo.png" alt="LogScanner" className="h-8 w-8 object-contain" />
-            <div className="font-display font-bold text-lg"><span className="text-slate-900">Log</span><span className="text-orange-600">Scanner</span></div>
+            <img src="https://customer-assets.emergentagent.com/job_cargo-hub-134/artifacts/qz1020ve_logo.png" alt="LogScanner" className="h-8 w-8 object-cover rounded-sm" />
+            <div className="font-display font-bold text-lg"><span className="text-slate-900">Log</span><span className="text-blue-600">Scanner</span></div>
           </div>
           <p className="text-slate-500 mt-3 leading-relaxed">India's instant freight discovery marketplace for verified businesses.</p>
         </div>

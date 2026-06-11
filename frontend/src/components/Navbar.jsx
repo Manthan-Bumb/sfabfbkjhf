@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
 
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_cargo-hub-134/artifacts/b5lfewnq_logo.png";
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_cargo-hub-134/artifacts/qz1020ve_logo.png";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -22,9 +22,9 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
         <Link to="/" data-testid="nav-logo" className="flex items-center gap-2.5">
-          <img src={LOGO_URL} alt="LogScanner" className="h-9 w-9 object-contain" />
+          <img src={LOGO_URL} alt="LogScanner" className="h-9 w-9 object-cover rounded-sm" />
           <div className="font-display font-bold text-lg tracking-tight">
-            <span className="text-slate-900">Log</span><span className="text-orange-600">Scanner</span>
+            <span className="text-slate-900">Log</span><span className="text-blue-600">Scanner</span>
           </div>
         </Link>
 
@@ -51,7 +51,7 @@ export default function Navbar() {
                 <Button data-testid="nav-login-btn" variant="ghost" className="text-slate-700">Login</Button>
               </Link>
               <Link to="/auth/business?tab=register">
-                <Button data-testid="nav-signup-btn" className="bg-orange-600 hover:bg-orange-700 text-white rounded-sm">Get Started</Button>
+                <Button data-testid="nav-signup-btn" className="bg-blue-600 hover:bg-blue-700 text-white rounded-sm">Get Started</Button>
               </Link>
             </>
           )}
