@@ -591,6 +591,94 @@ async def admin_stats(user=Depends(require_user)):
         "expired_leads": await db.leads.count_documents({"status": "expired"}),
     }
 
+@api.get("/admin/overview")
+async def admin_overview(user=Depends(require_user)):
+    if user["role"] != "admin": raise HTTPException(403, "Forbidden")
+    # Lead status breakdown
+    statuses = ["new","callback_pending","contacted","quote_sent","won","lost","expired"]
+    lead_by_status = []
+    for s in statuses:
+        lead_by_status.append({"name": s, "value": await db.leads.count_documents({"status": s})})
+
+    # Leads by day (last 14 days)
+    leads_by_day = []
+    today = datetime.now(timezone.utc).date()
+    for i in range(13, -1, -1):
+        day = today - timedelta(days=i)
+        start = datetime.combine(day, datetime.min.time(), tzinfo=timezone.utc).isoformat()
+        end = datetime.combine(day, datetime.max.time(), tzinfo=timezone.utc).isoformat()
+        count = await db.leads.count_documents({"created_at": {"$gte": start, "$lte": end}})
+        leads_by_day.append({"date": day.strftime("%d %b"), "leads": count})
+
+    # Top couriers by leads
+    pipeline = [{"$group": {"_id": "$courier_name", "count": {"$sum": 1}}}, {"$sort": {"count": -1}}, {"$limit": 5}]
+    top_couriers = []
+    async for d in db.leads.aggregate(pipeline):
+        top_couriers.append({"name": d["_id"] or "Unknown", "leads": d["count"]})
+
+    # Top routes
+    rt_pipeline = [
+        {"$group": {"_id": {"p": "$pickup_city", "d": "$delivery_city"}, "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}, {"$limit": 5}
+    ]
+    top_routes = []
+    async for d in db.leads.aggregate(rt_pipeline):
+        top_routes.append({"route": f"{d['_id']['p']} → {d['_id']['d']}", "leads": d["count"]})
+
+    # Transport mode breakdown (from rate cards as proxy for marketplace inventory)
+    tm_pipeline = [{"$group": {"_id": "$transport_mode", "count": {"$sum": 1}}}]
+    transport_modes = []
+    async for d in db.rate_cards.aggregate(tm_pipeline):
+        transport_modes.append({"mode": d["_id"], "count": d["count"]})
+
+    return {
+        "kpi": {
+            "businesses": await db.users.count_documents({"role": "business"}),
+            "couriers_active": await db.users.count_documents({"role": "courier", "admin_approved": True}),
+            "couriers_pending": await db.users.count_documents({"role": "courier", "admin_approved": False, "status": {"$ne": "rejected"}}),
+            "leads_total": await db.leads.count_documents({}),
+            "leads_won": await db.leads.count_documents({"status": "won"}),
+            "leads_open": await db.leads.count_documents({"status": {"$in": ["new", "callback_pending", "contacted"]}}),
+            "rate_cards": await db.rate_cards.count_documents({}),
+        },
+        "lead_by_status": lead_by_status,
+        "leads_by_day": leads_by_day,
+        "top_couriers": top_couriers,
+        "top_routes": top_routes,
+        "transport_modes": transport_modes,
+    }
+
+@api.get("/admin/businesses")
+async def admin_businesses(user=Depends(require_user)):
+    if user["role"] != "admin": raise HTTPException(403, "Forbidden")
+    return await db.users.find({"role": "business"}, {"_id": 0, "password": 0}).sort("created_at", -1).to_list(500)
+
+@api.get("/admin/rate-cards")
+async def admin_rate_cards(user=Depends(require_user)):
+    if user["role"] != "admin": raise HTTPException(403, "Forbidden")
+    cards = await db.rate_cards.find({}, {"_id": 0}).limit(500).to_list(500)
+    # join courier name
+    courier_map = {}
+    async for c in db.users.find({"role": "courier"}, {"_id": 0, "id": 1, "company_name": 1}):
+        courier_map[c["id"]] = c["company_name"]
+    for rc in cards: rc["courier_name"] = courier_map.get(rc.get("courier_id"), "Unknown")
+    return cards
+
+@api.get("/admin/sla-monitor")
+async def admin_sla(user=Depends(require_user)):
+    if user["role"] != "admin": raise HTTPException(403, "Forbidden")
+    now = datetime.now(timezone.utc)
+    leads = await db.leads.find({"status": {"$in": ["new", "callback_pending"]}}, {"_id": 0}).sort("sla_deadline", 1).to_list(200)
+    enriched = []
+    for l in leads:
+        try:
+            deadline = datetime.fromisoformat(l["sla_deadline"])
+            mins_left = int((deadline - now).total_seconds() / 60)
+        except Exception:
+            mins_left = None
+        enriched.append({**l, "mins_left": mins_left, "breached": mins_left is not None and mins_left < 0})
+    return enriched
+
 @api.get("/admin/couriers")
 async def admin_couriers(user=Depends(require_user)):
     if user["role"] != "admin": raise HTTPException(403, "Forbidden")
