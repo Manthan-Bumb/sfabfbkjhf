@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import NotificationsBell from "@/components/NotificationsBell";
 
-const LOGO_URL = "https://customer-assets.emergentagent.com/job_cargo-hub-134/artifacts/qz1020ve_logo.png";
+const LOGO_URL = "https://customer-assets.emergentagent.com/job_cargo-hub-134/artifacts/pnh7dk3f_Untitled%20design.png";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
