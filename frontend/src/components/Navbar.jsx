@@ -20,7 +20,7 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-xl border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-5 md:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-5 md:px-8 h-18 flex items-center justify-between py-2.5">
         <Link to="/" data-testid="nav-logo" className="flex items-center gap-2.5">
           <img src={LOGO_URL} alt="LogScanner" className="h-9 w-9 object-cover rounded-sm" />
           <div className="font-display font-bold text-lg tracking-tight">
