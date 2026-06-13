@@ -22,6 +22,7 @@ export default function CourierDashboard() {
   const [coverage, setCoverage] = useState({ states: [], cities: [], pincodes: [] });
   const [rcForm, setRcForm] = useState({ pickup_city: "", delivery_city: "", transport_mode: "Road Transport", weight_slab: "1-100 KG", delivery_timeline: "3-5 days", pricing_type: "per_kg", base_rate: 30, min_charge: 500, fuel_pct: 8, handling: 50, insurance_pct: 0.5, pickup_charge: 100, delivery_charge: 100 });
   const [covInput, setCovInput] = useState({ city: "", state: "", pincode: "" });
+  const [quickCity, setQuickCity] = useState("");
 
   const load = async () => {
     const [s, l, r, c] = await Promise.all([
@@ -58,6 +59,20 @@ export default function CourierDashboard() {
     const data = { ...coverage, ...next };
     await api.put("/courier/coverage", data);
     setCoverage(data); toast.success("Coverage updated");
+  };
+
+  const quickAddCity = async () => {
+    const v = quickCity.trim();
+    if (!v) return;
+    if ((coverage.cities || []).map(c => c.toLowerCase()).includes(v.toLowerCase())) {
+      toast.error("City already in your coverage"); return;
+    }
+    const next = { ...coverage, cities: [...(coverage.cities || []), v] };
+    await api.put("/courier/coverage", next);
+    setCoverage(next);
+    setRcForm(f => ({ ...f, pickup_city: f.pickup_city || v }));
+    setQuickCity("");
+    toast.success(`Added ${v} to your coverage`);
   };
 
   const updateStatus = async (id, status) => {
@@ -134,8 +149,20 @@ export default function CourierDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div className="font-display font-semibold text-lg">Add Rate Card</div>
                 {(coverage.cities || []).length === 0 && (
-                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-sm">Add cities in Coverage tab first</div>
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-sm">Add at least one city below to get started</div>
                 )}
+              </div>
+
+              {/* Inline quick-add city */}
+              <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 mb-4 flex items-end gap-2 flex-wrap">
+                <div className="flex-1 min-w-[200px]">
+                  <Label className="label-eyebrow">+ Add a new city to your coverage</Label>
+                  <Input data-testid="rc-quick-city" placeholder="e.g. Mumbai" className="rounded-sm border-slate-300 mt-1.5"
+                    value={quickCity} onChange={e => setQuickCity(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); quickAddCity(); } }} />
+                </div>
+                <Button data-testid="rc-quick-city-add" onClick={quickAddCity} className="bg-slate-900 hover:bg-slate-800 text-white rounded-sm h-10">Add to Coverage</Button>
+                <div className="text-xs text-slate-500 basis-full">Currently covering: <b>{(coverage.cities || []).length}</b> {(coverage.cities || []).length === 1 ? "city" : "cities"} {(coverage.cities || []).length > 0 && `· ${coverage.cities.join(", ")}`}</div>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 <Field2 label="Pickup City">
