@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Inbox, FileText, MapPin, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
-const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport", "Surface Cargo", "Express Delivery"];
+const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"];
 const SLABS = ["1-100 KG", "101-500 KG", "501-1000 KG", "1001-5000 KG", "5001+ KG"];
 
 export default function CourierDashboard() {
@@ -33,8 +33,24 @@ export default function CourierDashboard() {
   useEffect(() => { load().catch(() => {}); }, []);
 
   const addRc = async () => {
-    try { await api.post("/courier/rate-cards", { ...rcForm, base_rate: Number(rcForm.base_rate) }); toast.success("Rate card added"); load(); }
-    catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
+    if (!rcForm.pickup_city) { toast.error("Select a pickup city"); return; }
+    try {
+      if (rcForm.apply_all) {
+        const otherCities = (coverage.cities || []).filter(c => c !== rcForm.pickup_city);
+        if (otherCities.length === 0) { toast.error("No other cities in your coverage"); return; }
+        const payload = { ...rcForm, delivery_cities: otherCities, base_rate: Number(rcForm.base_rate) };
+        delete payload.apply_all; delete payload.delivery_city;
+        const { data } = await api.post("/courier/rate-cards/bulk", payload);
+        toast.success(`${data.count} rate cards created`);
+      } else {
+        if (!rcForm.delivery_city) { toast.error("Select a delivery city"); return; }
+        const payload = { ...rcForm, base_rate: Number(rcForm.base_rate) };
+        delete payload.apply_all;
+        await api.post("/courier/rate-cards", payload);
+        toast.success("Rate card added");
+      }
+      load();
+    } catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
   };
   const delRc = async (id) => { await api.delete(`/courier/rate-cards/${id}`); load(); };
 
@@ -115,10 +131,27 @@ export default function CourierDashboard() {
 
           <TabsContent value="rates" className="mt-6 space-y-6">
             <div className="border border-slate-200 p-6 rounded-sm">
-              <div className="font-display font-semibold text-lg mb-4">Add Rate Card</div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="font-display font-semibold text-lg">Add Rate Card</div>
+                {(coverage.cities || []).length === 0 && (
+                  <div className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-sm">Add cities in Coverage tab first</div>
+                )}
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <Field2 label="Pickup City"><Input data-testid="rc-pickup" className="rounded-sm border-slate-300" value={rcForm.pickup_city} onChange={e => setRcForm({...rcForm, pickup_city: e.target.value})} /></Field2>
-                <Field2 label="Delivery City"><Input data-testid="rc-delivery" className="rounded-sm border-slate-300" value={rcForm.delivery_city} onChange={e => setRcForm({...rcForm, delivery_city: e.target.value})} /></Field2>
+                <Field2 label="Pickup City">
+                  <Select value={rcForm.pickup_city} onValueChange={v => setRcForm({...rcForm, pickup_city: v, delivery_city: rcForm.delivery_city === v ? "" : rcForm.delivery_city})}>
+                    <SelectTrigger data-testid="rc-pickup" className="rounded-sm border-slate-300"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>{(coverage.cities || []).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </Field2>
+                <Field2 label="Delivery City">
+                  <Select value={rcForm.delivery_city} disabled={!rcForm.pickup_city || rcForm.apply_all} onValueChange={v => setRcForm({...rcForm, delivery_city: v})}>
+                    <SelectTrigger data-testid="rc-delivery" className="rounded-sm border-slate-300"><SelectValue placeholder={rcForm.apply_all ? "All other cities" : "Select"} /></SelectTrigger>
+                    <SelectContent>
+                      {(coverage.cities || []).filter(c => c !== rcForm.pickup_city).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </Field2>
                 <Field2 label="Mode"><Select value={rcForm.transport_mode} onValueChange={v => setRcForm({...rcForm, transport_mode: v})}><SelectTrigger data-testid="rc-mode" className="rounded-sm border-slate-300"><SelectValue /></SelectTrigger><SelectContent>{TRANSPORT_MODES.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select></Field2>
                 <Field2 label="Slab"><Select value={rcForm.weight_slab} onValueChange={v => setRcForm({...rcForm, weight_slab: v})}><SelectTrigger data-testid="rc-slab" className="rounded-sm border-slate-300"><SelectValue /></SelectTrigger><SelectContent>{SLABS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select></Field2>
                 <Field2 label="Pricing"><Select value={rcForm.pricing_type} onValueChange={v => setRcForm({...rcForm, pricing_type: v})}><SelectTrigger data-testid="rc-pricing-type" className="rounded-sm border-slate-300"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="per_kg">Per KG</SelectItem><SelectItem value="fixed">Fixed</SelectItem><SelectItem value="minimum">Minimum</SelectItem></SelectContent></Select></Field2>
@@ -126,7 +159,15 @@ export default function CourierDashboard() {
                 <Field2 label="Min Charge ₹"><Input type="number" className="rounded-sm border-slate-300" value={rcForm.min_charge} onChange={e => setRcForm({...rcForm, min_charge: e.target.value})} /></Field2>
                 <Field2 label="Timeline"><Input className="rounded-sm border-slate-300" value={rcForm.delivery_timeline} onChange={e => setRcForm({...rcForm, delivery_timeline: e.target.value})} /></Field2>
               </div>
-              <Button data-testid="rc-add-btn" onClick={addRc} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white rounded-sm">Add Rate Card</Button>
+              <div className="mt-4 flex items-center justify-between flex-wrap gap-3">
+                <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input data-testid="rc-apply-all" type="checkbox" className="w-4 h-4 accent-blue-600" checked={!!rcForm.apply_all} onChange={e => setRcForm({...rcForm, apply_all: e.target.checked})} />
+                  Apply this rate to <b>all other cities</b> ({Math.max(0, (coverage.cities || []).filter(c => c !== rcForm.pickup_city).length)} destinations)
+                </label>
+                <Button data-testid="rc-add-btn" onClick={addRc} className="bg-blue-600 hover:bg-blue-700 text-white rounded-sm">
+                  {rcForm.apply_all ? "Create Bulk Rate Cards" : "Add Rate Card"}
+                </Button>
+              </div>
             </div>
 
             <div className="border border-slate-200 rounded-sm overflow-hidden">

@@ -98,13 +98,11 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-5 md:px-8">
           <div className="label-eyebrow">Transport Modes</div>
           <div className="font-display font-bold text-3xl md:text-4xl tracking-tight mt-2">Every freight class, one marketplace.</div>
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
               { i: <Truck className="w-5 h-5" />, t: "Road Transport" },
-              { i: <Truck className="w-5 h-5" />, t: "Surface Cargo" },
               { i: <Plane className="w-5 h-5" />, t: "Air Cargo" },
               { i: <Train className="w-5 h-5" />, t: "Rail Cargo" },
-              { i: <Zap className="w-5 h-5" />, t: "Express Delivery" },
             ].map((m) => (
               <div key={m.t} className="bg-white border border-slate-200 p-5 rounded-sm flex flex-col gap-3 hover:border-blue-300">
                 <div className="text-blue-600">{m.i}</div>

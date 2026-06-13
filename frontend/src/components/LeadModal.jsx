@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Timer, CheckCircle2 } from "lucide-react";
 
 const PARCEL_TYPES = ["Documents", "Electronics", "Industrial Goods", "Machinery", "Fragile Items", "FMCG", "Pharmaceuticals", "General Cargo", "Heavy Cargo"];
-const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport", "Surface Cargo", "Express Delivery"];
+const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"];
 
 export default function LeadModal({ open, onClose, courier, action, prefill = {} }) {
   const [form, setForm] = useState({

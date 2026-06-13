@@ -155,7 +155,7 @@ class LeadIn(BaseModel):
 
 # ============== Constants ==============
 WEIGHT_SLABS = ["1-100 KG", "101-500 KG", "501-1000 KG", "1001-5000 KG", "5001+ KG"]
-TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport", "Surface Cargo", "Express Delivery"]
+TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"]
 PARCEL_TYPES = ["Documents", "Electronics", "Industrial Goods", "Machinery", "Fragile Items", "FMCG", "Pharmaceuticals", "General Cargo", "Heavy Cargo"]
 
 def slab_for_weight(w: float) -> str:
@@ -542,6 +542,38 @@ async def add_rate_card(data: RateCardIn, user=Depends(require_user)):
     rc.pop("_id", None)
     return rc
 
+class BulkRateCardIn(BaseModel):
+    pickup_city: str
+    delivery_cities: List[str]
+    transport_mode: str
+    weight_slab: str
+    delivery_timeline: str
+    pricing_type: str
+    base_rate: float
+    min_charge: float = 0
+    fuel_pct: float = 8
+    handling: float = 50
+    insurance_pct: float = 0.5
+    pickup_charge: float = 0
+    delivery_charge: float = 0
+
+@api.post("/courier/rate-cards/bulk")
+async def add_rate_cards_bulk(data: BulkRateCardIn, user=Depends(require_user)):
+    if user["role"] != "courier": raise HTTPException(403, "Forbidden")
+    created = []
+    for dc in data.delivery_cities:
+        if dc == data.pickup_city: continue
+        rc = data.model_dump()
+        rc.pop("delivery_cities", None)
+        rc["delivery_city"] = dc
+        rc["id"] = str(uuid.uuid4())
+        rc["courier_id"] = user["id"]
+        rc["created_at"] = now_iso()
+        await db.rate_cards.insert_one(rc)
+        rc.pop("_id", None)
+        created.append(rc)
+    return {"success": True, "count": len(created)}
+
 @api.delete("/courier/rate-cards/{rc_id}")
 async def delete_rate_card(rc_id: str, user=Depends(require_user)):
     await db.rate_cards.delete_one({"id": rc_id, "courier_id": user["id"]})
@@ -768,7 +800,7 @@ async def seed_db():
                 "mobile_verified": True, "email_verified": True, "gst_verified": True,
                 "admin_approved": True, "status": "active",
                 "rating": rating, "is_premium": premium, "is_featured": premium,
-                "transport_modes": ["Road Transport","Surface Cargo","Express Delivery"] + (["Air Cargo"] if premium else []),
+                "transport_modes": ["Road Transport"] + (["Air Cargo", "Rail Cargo"] if premium else []),
                 "created_at": now_iso(),
             })
             await db.coverage.insert_one({
@@ -779,16 +811,16 @@ async def seed_db():
             for pc in cities[:3]:
                 for dc in cities:
                     if pc == dc: continue
-                    for mode in ["Road Transport", "Surface Cargo", "Express Delivery"]:
+                    for mode in ["Road Transport"]:
                         for slab in WEIGHT_SLABS[:3]:
                             base = {"1-100 KG": 35, "101-500 KG": 28, "501-1000 KG": 22}[slab]
-                            base += random.randint(-5, 8) + (10 if mode == "Express Delivery" else 0)
+                            base += random.randint(-5, 8)
                             await db.rate_cards.insert_one({
                                 "id": str(uuid.uuid4()),
                                 "courier_id": uid,
                                 "pickup_city": pc, "delivery_city": dc,
                                 "transport_mode": mode, "weight_slab": slab,
-                                "delivery_timeline": "1-2 days" if mode == "Express Delivery" else "3-5 days",
+                                "delivery_timeline": "3-5 days",
                                 "pricing_type": "per_kg",
                                 "base_rate": base, "min_charge": 500,
                                 "fuel_pct": 8, "handling": 50, "insurance_pct": 0.5,
@@ -796,6 +828,9 @@ async def seed_db():
                                 "created_at": now_iso(),
                             })
         logger.info("Seeded courier partners and rate cards")
+
+    # Cleanup: remove rate cards with deprecated transport modes
+    await db.rate_cards.delete_many({"transport_mode": {"$in": ["Surface Cargo", "Express Delivery"]}})
 
 
 app.include_router(api)
