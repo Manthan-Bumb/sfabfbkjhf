@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Inbox, FileText, MapPin, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { INDIAN_CITIES, normalizeCity } from "@/lib/cities";
+import { normalizeCity } from "@/lib/cities";
 
 const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"];
 const SLABS = ["1-100 KG", "101-500 KG", "501-1000 KG", "1001-5000 KG", "5001+ KG"];
@@ -158,12 +158,9 @@ export default function CourierDashboard() {
               <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 mb-4 flex items-end gap-2 flex-wrap">
                 <div className="flex-1 min-w-[200px]">
                   <Label className="label-eyebrow">+ Add a new city to your coverage</Label>
-                  <Input data-testid="rc-quick-city" list="indian-cities-list" placeholder="Start typing — e.g. Mumbai, Pune, Surat..." className="rounded-sm border-slate-300 mt-1.5"
+                  <Input data-testid="rc-quick-city" placeholder="Type city name — e.g. Indore" className="rounded-sm border-slate-300 mt-1.5"
                     value={quickCity} onChange={e => setQuickCity(e.target.value)}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); quickAddCity(); } }} />
-                  <datalist id="indian-cities-list">
-                    {INDIAN_CITIES.map(c => <option key={c} value={c} />)}
-                  </datalist>
                 </div>
                 <Button data-testid="rc-quick-city-add" onClick={quickAddCity} className="bg-slate-900 hover:bg-slate-800 text-white rounded-sm h-10">Add to Coverage</Button>
                 <div className="text-xs text-slate-500 basis-full">Currently covering: <b>{(coverage.cities || []).length}</b> {(coverage.cities || []).length === 1 ? "city" : "cities"} {(coverage.cities || []).length > 0 && `· ${coverage.cities.join(", ")}`}</div>
@@ -222,7 +219,7 @@ export default function CourierDashboard() {
 
           <TabsContent value="coverage" className="mt-6 space-y-6">
             <CovBlock title="States" items={coverage.states || []} onAdd={(v) => saveCov({ states: [...(coverage.states||[]), v] })} onRemove={(v) => saveCov({ states: coverage.states.filter(x => x !== v) })} placeholder="Maharashtra" testid="cov-state" normalize={normalizeCity} />
-            <CovBlock title="Cities" items={coverage.cities || []} onAdd={(v) => saveCov({ cities: [...(coverage.cities||[]), v] })} onRemove={(v) => saveCov({ cities: coverage.cities.filter(x => x !== v) })} placeholder="Mumbai" testid="cov-city" suggest normalize={normalizeCity} />
+            <CovBlock title="Cities" items={coverage.cities || []} onAdd={(v) => saveCov({ cities: [...(coverage.cities||[]), v] })} onRemove={(v) => saveCov({ cities: coverage.cities.filter(x => x !== v) })} placeholder="Mumbai" testid="cov-city" normalize={normalizeCity} />
             <CovBlock title="Pincodes" items={coverage.pincodes || []} onAdd={(v) => saveCov({ pincodes: [...(coverage.pincodes||[]), v] })} onRemove={(v) => saveCov({ pincodes: coverage.pincodes.filter(x => x !== v) })} placeholder="400001" testid="cov-pin" />
           </TabsContent>
         </Tabs>
@@ -239,7 +236,7 @@ const Stat = ({ label, v, icon }) => (
 );
 const Field2 = ({ label, children }) => <div><Label className="label-eyebrow">{label}</Label><div className="mt-1.5">{children}</div></div>;
 
-const CovBlock = ({ title, items, onAdd, onRemove, placeholder, testid, suggest = false, normalize }) => {
+const CovBlock = ({ title, items, onAdd, onRemove, placeholder, testid, normalize }) => {
   const [v, setV] = useState("");
   const submit = () => {
     const value = normalize ? normalize(v) : v.trim();
@@ -251,7 +248,7 @@ const CovBlock = ({ title, items, onAdd, onRemove, placeholder, testid, suggest 
     <div className="border border-slate-200 p-5 rounded-sm">
       <div className="font-display font-semibold text-lg mb-3">{title}</div>
       <div className="flex gap-2">
-        <Input data-testid={`${testid}-input`} list={suggest ? "indian-cities-list" : undefined} placeholder={placeholder} className="rounded-sm border-slate-300" value={v}
+        <Input data-testid={`${testid}-input`} placeholder={placeholder} className="rounded-sm border-slate-300" value={v}
           onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); submit(); } }} />
         <Button data-testid={`${testid}-add`} onClick={submit} className="bg-blue-600 hover:bg-blue-700 text-white rounded-sm">Add</Button>
       </div>
