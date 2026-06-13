@@ -832,6 +832,59 @@ async def seed_db():
     # Cleanup: remove rate cards with deprecated transport modes
     await db.rate_cards.delete_many({"transport_mode": {"$in": ["Surface Cargo", "Express Delivery"]}})
 
+    # Seed demo accounts (idempotent)
+    demo_business_email = "demo.business@logscanner.in"
+    if not await db.users.find_one({"email": demo_business_email}):
+        await db.users.insert_one({
+            "id": str(uuid.uuid4()), "role": "business",
+            "company_name": "Demo Shippers Pvt Ltd",
+            "gst_number": "27DEMOB1234A1Z5",
+            "contact_person": "Demo Business User",
+            "mobile": "9000000001",
+            "email": demo_business_email,
+            "password": hash_password("demo@123"),
+            "mobile_verified": True, "email_verified": True, "gst_verified": True,
+            "status": "active", "created_at": now_iso(),
+        })
+
+    demo_courier_email = "demo.courier@logscanner.in"
+    if not await db.users.find_one({"email": demo_courier_email}):
+        dcid = str(uuid.uuid4())
+        cities = ["Mumbai", "Pune", "Bangalore", "Hyderabad", "Chennai", "Delhi"]
+        await db.users.insert_one({
+            "id": dcid, "role": "courier",
+            "company_name": "Demo Cargo Logistics",
+            "gst_number": "27DEMOC1234A1Z5",
+            "pan_number": "DEMOC1234A",
+            "contact_person": "Demo Courier User",
+            "mobile": "9000000002",
+            "email": demo_courier_email,
+            "password": hash_password("demo@123"),
+            "years_experience": 8,
+            "mobile_verified": True, "email_verified": True, "gst_verified": True,
+            "admin_approved": True, "status": "active",
+            "rating": 4.6, "is_premium": True, "is_featured": True,
+            "transport_modes": ["Road Transport", "Air Cargo", "Rail Cargo"],
+            "created_at": now_iso(),
+        })
+        await db.coverage.insert_one({
+            "id": str(uuid.uuid4()), "courier_id": dcid,
+            "states": ["Maharashtra", "Karnataka", "Telangana", "Tamil Nadu", "Delhi"],
+            "cities": cities, "pincodes": [],
+        })
+        # Pre-seed 6 rate cards from Mumbai to all others
+        for dc in cities[1:]:
+            await db.rate_cards.insert_one({
+                "id": str(uuid.uuid4()), "courier_id": dcid,
+                "pickup_city": "Mumbai", "delivery_city": dc,
+                "transport_mode": "Road Transport", "weight_slab": "1-100 KG",
+                "delivery_timeline": "3-5 days", "pricing_type": "per_kg",
+                "base_rate": 32, "min_charge": 500,
+                "fuel_pct": 8, "handling": 50, "insurance_pct": 0.5,
+                "pickup_charge": 100, "delivery_charge": 100,
+                "created_at": now_iso(),
+            })
+
 
 app.include_router(api)
 app.add_middleware(
