@@ -535,6 +535,8 @@ async def get_rate_cards(user=Depends(require_user)):
 async def add_rate_card(data: RateCardIn, user=Depends(require_user)):
     if user["role"] != "courier": raise HTTPException(403, "Forbidden")
     rc = data.model_dump()
+    rc["pickup_city"] = _norm_city(rc.get("pickup_city", ""))
+    rc["delivery_city"] = _norm_city(rc.get("delivery_city", ""))
     rc["id"] = str(uuid.uuid4())
     rc["courier_id"] = user["id"]
     rc["created_at"] = now_iso()
@@ -584,15 +586,26 @@ async def get_coverage(user=Depends(require_user)):
     cov = await db.coverage.find_one({"courier_id": user["id"]}, {"_id": 0})
     return cov or {"states": [], "cities": [], "pincodes": []}
 
+def _norm_city(s: str) -> str:
+    if not s: return ""
+    parts = s.strip().lower().split()
+    def cap(w):
+        return "-".join(p[:1].upper() + p[1:] if p else p for p in w.split("-"))
+    return " ".join(cap(p) for p in parts)
+
+
 @api.put("/courier/coverage")
 async def put_coverage(data: CoverageIn, user=Depends(require_user)):
     if user["role"] != "courier": raise HTTPException(403, "Forbidden")
+    cities = sorted({_norm_city(c) for c in data.cities if c.strip()})
+    states = sorted({_norm_city(s) for s in data.states if s.strip()})
+    pincodes = sorted({p.strip() for p in data.pincodes if p.strip()})
     await db.coverage.update_one(
         {"courier_id": user["id"]},
-        {"$set": {"courier_id": user["id"], "states": data.states, "cities": data.cities, "pincodes": data.pincodes}},
+        {"$set": {"courier_id": user["id"], "states": states, "cities": cities, "pincodes": pincodes}},
         upsert=True,
     )
-    return {"success": True}
+    return {"success": True, "states": states, "cities": cities, "pincodes": pincodes}
 
 @api.get("/notifications")
 async def get_notifications(user=Depends(require_user)):
@@ -831,6 +844,17 @@ async def seed_db():
 
     # Cleanup: remove rate cards with deprecated transport modes
     await db.rate_cards.delete_many({"transport_mode": {"$in": ["Surface Cargo", "Express Delivery"]}})
+
+    # Normalize cities in coverage + rate_cards (one-time migration)
+    async for cov in db.coverage.find({}, {"_id": 1, "cities": 1, "states": 1}):
+        new_cities = sorted({_norm_city(c) for c in (cov.get("cities") or []) if c})
+        new_states = sorted({_norm_city(s) for s in (cov.get("states") or []) if s})
+        await db.coverage.update_one({"_id": cov["_id"]}, {"$set": {"cities": new_cities, "states": new_states}})
+    async for rc in db.rate_cards.find({}, {"_id": 1, "pickup_city": 1, "delivery_city": 1}):
+        await db.rate_cards.update_one(
+            {"_id": rc["_id"]},
+            {"$set": {"pickup_city": _norm_city(rc.get("pickup_city", "")), "delivery_city": _norm_city(rc.get("delivery_city", ""))}}
+        )
 
     # Seed demo accounts (idempotent)
     demo_business_email = "demo.business@logscanner.in"
