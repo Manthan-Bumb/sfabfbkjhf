@@ -266,15 +266,24 @@ const LeadsTable = ({ leads, filter, setFilter }) => {
       </div>
       <div className="bg-white border border-slate-200 rounded-sm overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th className="p-3">Lead</th><th className="p-3">Business → Courier</th><th className="p-3">Route</th><th className="p-3">Weight</th><th className="p-3">Mode</th><th className="p-3">Status</th><th className="p-3">Created</th></tr></thead>
+          <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th className="p-3">Lead</th><th className="p-3">Business → Courier</th><th className="p-3">Route</th><th className="p-3">Parcel</th><th className="p-3">Special</th><th className="p-3">Status</th><th className="p-3">Created</th></tr></thead>
           <tbody>
             {visible.map(l => (
               <tr key={l.id} className="border-t border-slate-200">
                 <td className="p-3 font-mono text-xs">{l.id}</td>
                 <td className="p-3 text-xs">{l.business_name} → <span className="font-medium">{l.courier_name}</span></td>
                 <td className="p-3">{l.pickup_city} → {l.delivery_city}</td>
-                <td className="p-3">{l.weight}kg</td>
-                <td className="p-3 text-xs">{l.transport_mode}</td>
+                <td className="p-3 text-xs">
+                  <div>{l.weight}kg · {l.parcel_type}</div>
+                  {l.parcel_value > 0 && <div className="text-slate-500">₹{Number(l.parcel_value).toLocaleString("en-IN")}</div>}
+                </td>
+                <td className="p-3">
+                  <div className="flex flex-col gap-1">
+                    {l.insurance_required && <Badge className="bg-blue-600 text-white rounded-sm text-[9px] w-fit">INSURED</Badge>}
+                    {l.temperature_controlled && <Badge className="bg-cyan-600 text-white rounded-sm text-[9px] w-fit">❄ TEMP</Badge>}
+                    {!l.insurance_required && !l.temperature_controlled && <span className="text-xs text-slate-400">—</span>}
+                  </div>
+                </td>
                 <td className="p-3"><Badge variant="outline" className="rounded-sm border-slate-300 text-[10px] uppercase">{l.status}</Badge></td>
                 <td className="p-3 text-xs text-slate-500">{l.created_at ? new Date(l.created_at).toLocaleString() : "—"}</td>
               </tr>

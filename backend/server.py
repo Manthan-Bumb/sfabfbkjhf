@@ -151,6 +151,9 @@ class LeadIn(BaseModel):
     dispatch_date: Optional[str] = ""
     notes: Optional[str] = ""
     action: str  # 'callback' or 'quote'
+    parcel_value: Optional[float] = 0
+    insurance_required: Optional[bool] = False
+    temperature_controlled: Optional[bool] = False
 
 
 # ============== Constants ==============
@@ -442,6 +445,9 @@ async def create_lead(data: LeadIn, user=Depends(require_user)):
         "dispatch_date": data.dispatch_date,
         "notes": data.notes,
         "action": data.action,
+        "parcel_value": data.parcel_value or 0,
+        "insurance_required": bool(data.insurance_required),
+        "temperature_controlled": bool(data.temperature_controlled),
         "status": "new",
         "sla_deadline": (datetime.now(timezone.utc) + timedelta(minutes=60)).isoformat(),
         "created_at": now_iso(),

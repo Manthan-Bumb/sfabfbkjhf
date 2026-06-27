@@ -17,6 +17,7 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
     pickup_city: "", delivery_city: "", weight: 100,
     parcel_type: "General Cargo", transport_mode: "Road Transport",
     dispatch_date: "", notes: "",
+    parcel_value: "", insurance_required: false, temperature_controlled: false,
   });
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState(null);
@@ -120,6 +121,32 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
             <div>
               <Label className="label-eyebrow">Special Notes</Label>
               <Textarea data-testid="lead-notes" value={form.notes} onChange={e => set("notes", e.target.value)} className="rounded-sm border-slate-300 mt-1.5" rows={3} />
+            </div>
+
+            <div className="border-t border-slate-200 pt-4">
+              <div className="label-eyebrow mb-3">Parcel Details</div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="label-eyebrow">Parcel Value (₹)</Label>
+                  <Input data-testid="lead-parcel-value" type="number" min="0" placeholder="e.g. 25000"
+                    value={form.parcel_value} onChange={e => set("parcel_value", e.target.value)}
+                    className="rounded-sm border-slate-300 mt-1.5" />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" data-testid="lead-insurance-toggle"
+                    onClick={() => set("insurance_required", !form.insurance_required)}
+                    className={`border rounded-sm px-3 py-2 text-xs font-semibold transition-all ${form.insurance_required ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"}`}>
+                    <div className="label-eyebrow text-[9px] mb-0.5">Insurance</div>
+                    <div>{form.insurance_required ? "✓ Required" : "Not Required"}</div>
+                  </button>
+                  <button type="button" data-testid="lead-temp-toggle"
+                    onClick={() => set("temperature_controlled", !form.temperature_controlled)}
+                    className={`border rounded-sm px-3 py-2 text-xs font-semibold transition-all ${form.temperature_controlled ? "border-cyan-600 bg-cyan-50 text-cyan-700" : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"}`}>
+                    <div className="label-eyebrow text-[9px] mb-0.5">Temperature</div>
+                    <div>{form.temperature_controlled ? "❄ Controlled" : "Non-controlled"}</div>
+                  </button>
+                </div>
+              </div>
             </div>
             <Button data-testid="lead-submit-btn" disabled={submitting} onClick={submit} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-11">
               {submitting ? "Sending..." : `Submit ${action === "quote" ? "Quote Request" : "Callback Request"}`}
