@@ -125,6 +125,14 @@ class RateCardIn(BaseModel):
     pickup_charge: float = 0
     delivery_charge: float = 0
 
+class SpotPriceIn(BaseModel):
+    spot_rate: float
+    window_days: int = 5
+
+class BookingDecisionIn(BaseModel):
+    decision: str  # "approved" | "rejected"
+    reason: Optional[str] = ""
+
 class CoverageIn(BaseModel):
     states: List[str] = []
     cities: List[str] = []
@@ -357,6 +365,8 @@ async def search_couriers(
         view["transport_mode"] = rc.get("transport_mode", transport_mode)
         view["weight_slab"] = rc.get("weight_slab", target_slab or "")
         view["rate_card_id"] = rc["id"]
+        view["spot_price"] = _spot_active(rc)
+        view["spot_expires_days"] = _spot_expires_in_days(rc) if _spot_active(rc) else 0
         view["_sort_rate"] = est["total"]
         results.append(view)
     # sort
@@ -372,7 +382,8 @@ async def search_couriers(
 
 def _calc_total(rc: Dict, weight: float) -> Dict:
     pricing_type = rc.get("pricing_type", "per_kg")
-    base = rc.get("base_rate", 0)
+    spot = _spot_active(rc)
+    base = rc.get("spot_rate", rc.get("base_rate", 0)) if spot else rc.get("base_rate", 0)
     sub = 0.0
     if pricing_type == "per_kg":
         sub = base * max(weight, 1)
@@ -422,7 +433,10 @@ async def create_lead(data: LeadIn, user=Depends(require_user)):
     courier = await db.users.find_one({"id": data.courier_id, "role": "courier"}, {"_id": 0})
     if not courier:
         raise HTTPException(404, "Courier not found")
-    lead_id = "LEAD-" + str(uuid.uuid4())[:8].upper()
+    is_booking = data.action == "booking"
+    lead_id = ("BOOK-" if is_booking else "LEAD-") + str(uuid.uuid4())[:8].upper()
+    # Auto-calc insurance amount (1% of parcel value) if insurance is opted
+    insurance_amount = round((data.parcel_value or 0) * 0.01, 2) if data.insurance_required else 0
     lead = {
         "id": lead_id,
         "business_id": user["id"],
@@ -447,7 +461,10 @@ async def create_lead(data: LeadIn, user=Depends(require_user)):
         "action": data.action,
         "parcel_value": data.parcel_value or 0,
         "insurance_required": bool(data.insurance_required),
+        "insurance_amount": insurance_amount,
         "temperature_controlled": bool(data.temperature_controlled),
+        "is_booking": is_booking,
+        "booking_status": "pending_approval" if is_booking else None,
         "status": "new",
         "sla_deadline": (datetime.now(timezone.utc) + timedelta(minutes=60)).isoformat(),
         "created_at": now_iso(),
@@ -497,6 +514,36 @@ async def update_lead_status(lead_id: str, payload: Dict[str, Any], user=Depends
         raise HTTPException(403, "Forbidden")
     await db.leads.update_one({"id": lead_id}, {"$set": {"status": new_status, "updated_at": now_iso()}})
     return {"success": True}
+
+@api.patch("/bookings/{lead_id}/decision")
+async def booking_decision(lead_id: str, data: BookingDecisionIn, user=Depends(require_user)):
+    if user["role"] != "courier": raise HTTPException(403, "Forbidden")
+    lead = await db.leads.find_one({"id": lead_id})
+    if not lead or lead.get("courier_id") != user["id"]:
+        raise HTTPException(403, "Forbidden")
+    if not lead.get("is_booking"):
+        raise HTTPException(400, "Not a booking")
+    if data.decision not in ["approved", "rejected"]:
+        raise HTTPException(400, "Invalid decision")
+    await db.leads.update_one({"id": lead_id}, {"$set": {
+        "booking_status": data.decision,
+        "booking_decision_reason": data.reason or "",
+        "booking_decided_at": now_iso(),
+        "status": "won" if data.decision == "approved" else "lost",
+    }})
+    # In-app notification to business
+    biz_id = lead.get("business_id")
+    await db.notifications.insert_one({
+        "id": str(uuid.uuid4()),
+        "user_id": biz_id,
+        "type": "booking_decision",
+        "title": f"Booking {data.decision.upper()}",
+        "body": f"{lead.get('courier_name')} has {data.decision} your booking {lead_id}.",
+        "lead_id": lead_id,
+        "read": False, "channel": "in_app", "status": "delivered",
+        "created_at": now_iso(),
+    })
+    return {"success": True, "booking_status": data.decision}
 
 
 # ============== Business Dashboard ==============
@@ -581,6 +628,53 @@ async def add_rate_cards_bulk(data: BulkRateCardIn, user=Depends(require_user)):
         rc.pop("_id", None)
         created.append(rc)
     return {"success": True, "count": len(created)}
+
+def _spot_active(rc: Dict) -> bool:
+    """True if rate card has an active, non-expired spot price."""
+    if not rc.get("spot_active") or not rc.get("spot_rate"): return False
+    starts = rc.get("spot_starts_at")
+    days = rc.get("spot_window_days", 5)
+    if not starts: return False
+    try:
+        start_dt = datetime.fromisoformat(starts)
+    except Exception:
+        return False
+    expiry = start_dt + timedelta(days=days)
+    return datetime.now(timezone.utc) <= expiry
+
+
+def _spot_expires_in_days(rc: Dict) -> int:
+    starts = rc.get("spot_starts_at")
+    days = rc.get("spot_window_days", 5)
+    if not starts: return 0
+    try:
+        start_dt = datetime.fromisoformat(starts)
+    except Exception:
+        return 0
+    expiry = start_dt + timedelta(days=days)
+    delta = expiry - datetime.now(timezone.utc)
+    return max(0, int(delta.total_seconds() / 86400) + 1)
+
+
+@api.post("/courier/rate-cards/{rc_id}/spot")
+async def set_spot_price(rc_id: str, data: SpotPriceIn, user=Depends(require_user)):
+    if user["role"] != "courier": raise HTTPException(403, "Forbidden")
+    rc = await db.rate_cards.find_one({"id": rc_id, "courier_id": user["id"]})
+    if not rc: raise HTTPException(404, "Rate card not found")
+    await db.rate_cards.update_one({"id": rc_id}, {"$set": {
+        "spot_rate": data.spot_rate,
+        "spot_active": True,
+        "spot_window_days": data.window_days,
+        "spot_starts_at": now_iso(),
+    }})
+    return {"success": True}
+
+@api.delete("/courier/rate-cards/{rc_id}/spot")
+async def clear_spot_price(rc_id: str, user=Depends(require_user)):
+    if user["role"] != "courier": raise HTTPException(403, "Forbidden")
+    await db.rate_cards.update_one({"id": rc_id, "courier_id": user["id"]}, {"$set": {"spot_active": False}})
+    return {"success": True}
+
 
 @api.delete("/courier/rate-cards/{rc_id}")
 async def delete_rate_card(rc_id: str, user=Depends(require_user)):

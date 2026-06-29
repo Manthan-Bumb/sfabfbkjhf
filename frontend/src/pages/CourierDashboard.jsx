@@ -80,6 +80,34 @@ export default function CourierDashboard() {
     await api.patch(`/leads/${id}/status`, { status }); load();
   };
 
+  const decideBooking = async (id, decision) => {
+    try {
+      await api.patch(`/bookings/${id}/decision`, { decision });
+      toast.success(`Booking ${decision}`);
+      load();
+    } catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
+  };
+
+  const setSpot = async (rcId) => {
+    const rate = window.prompt("Spot rate (₹) — discounted rate for next 5 days:");
+    if (!rate) return;
+    const days = Number(window.prompt("Validity window (days)", "5")) || 5;
+    try {
+      await api.post(`/courier/rate-cards/${rcId}/spot`, { spot_rate: Number(rate), window_days: days });
+      toast.success("Spot price activated");
+      load();
+    } catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
+  };
+
+  const clearSpot = async (rcId) => {
+    await api.delete(`/courier/rate-cards/${rcId}/spot`);
+    toast.success("Spot price cleared");
+    load();
+  };
+
+  const bookings = leads.filter(l => l.is_booking);
+  const otherLeads = leads.filter(l => !l.is_booking);
+
   return (
     <div className="bg-white min-h-screen">
       <Navbar />
@@ -108,12 +136,58 @@ export default function CourierDashboard() {
           <Stat label="Cities Covered" v={stats.cities_covered || 0} icon={<MapPin className="w-5 h-5" />} />
         </div>
 
-        <Tabs defaultValue="leads">
+        <Tabs defaultValue="bookings">
           <TabsList className="rounded-sm bg-slate-100">
-            <TabsTrigger data-testid="cd-tab-leads" value="leads" className="rounded-sm">Leads</TabsTrigger>
+            <TabsTrigger data-testid="cd-tab-bookings" value="bookings" className="rounded-sm relative">Bookings{bookings.filter(b => b.booking_status === "pending_approval").length > 0 && <span className="ml-1.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] h-[18px] inline-flex items-center justify-center">{bookings.filter(b => b.booking_status === "pending_approval").length}</span>}</TabsTrigger>
+            <TabsTrigger data-testid="cd-tab-leads" value="leads" className="rounded-sm">Leads & Quotes</TabsTrigger>
             <TabsTrigger data-testid="cd-tab-rates" value="rates" className="rounded-sm">Rate Cards</TabsTrigger>
             <TabsTrigger data-testid="cd-tab-coverage" value="coverage" className="rounded-sm">Coverage</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="bookings" className="mt-6">
+            <div className="border border-slate-200 rounded-sm overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
+                  <tr><th className="p-3">Booking</th><th className="p-3">Business</th><th className="p-3">Route</th><th className="p-3">Parcel · Value</th><th className="p-3">Special</th><th className="p-3">Status</th><th className="p-3">Action</th></tr>
+                </thead>
+                <tbody>
+                  {bookings.map(b => (
+                    <tr key={b.id} className="border-t border-slate-200" data-testid={`cd-booking-${b.id}`}>
+                      <td className="p-3 font-mono text-xs">{b.id}</td>
+                      <td className="p-3 font-medium">{b.business_name}<div className="text-xs text-slate-500">{b.business_mobile}</div></td>
+                      <td className="p-3 text-slate-600">{b.pickup_city} → {b.delivery_city}<div className="text-xs text-slate-400">{b.weight}kg · {b.transport_mode}</div></td>
+                      <td className="p-3 text-xs">
+                        <div>{b.parcel_type}</div>
+                        {b.parcel_value > 0 && <div className="font-semibold">₹{Number(b.parcel_value).toLocaleString("en-IN")}</div>}
+                      </td>
+                      <td className="p-3">
+                        <div className="flex flex-col gap-1">
+                          {b.insurance_required && <Badge className="bg-blue-600 text-white rounded-sm text-[9px] w-fit">INSURED ₹{Number(b.insurance_amount || 0).toLocaleString("en-IN")}</Badge>}
+                          {b.temperature_controlled && <Badge className="bg-cyan-600 text-white rounded-sm text-[9px] w-fit">❄ TEMP</Badge>}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        <Badge className={`rounded-sm text-[10px] uppercase text-white ${b.booking_status === "approved" ? "bg-emerald-600" : b.booking_status === "rejected" ? "bg-red-600" : "bg-amber-500"}`}>
+                          {b.booking_status?.replace("_", " ")}
+                        </Badge>
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        {b.booking_status === "pending_approval" ? (
+                          <div className="flex gap-1.5">
+                            <Button data-testid={`cd-booking-approve-${b.id}`} size="sm" onClick={() => decideBooking(b.id, "approved")} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-sm h-7 px-2 text-xs">Approve</Button>
+                            <Button data-testid={`cd-booking-reject-${b.id}`} size="sm" variant="outline" onClick={() => decideBooking(b.id, "rejected")} className="rounded-sm border-slate-300 h-7 px-2 text-xs">Reject</Button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-slate-400">decided</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {bookings.length === 0 && <tr><td colSpan={7} className="p-10 text-center text-slate-500">No bookings yet. Businesses can book directly from search results.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
 
           <TabsContent value="leads" className="mt-6">
             <div className="border border-slate-200 rounded-sm overflow-hidden">
@@ -122,7 +196,7 @@ export default function CourierDashboard() {
                   <tr><th className="p-3">Lead</th><th className="p-3">Business</th><th className="p-3">Route</th><th className="p-3">Parcel</th><th className="p-3">Special</th><th className="p-3">Contact</th><th className="p-3">Action</th></tr>
                 </thead>
                 <tbody>
-                  {leads.map(l => (
+                  {otherLeads.map(l => (
                     <tr key={l.id} className="border-t border-slate-200" data-testid={`cd-lead-${l.id}`}>
                       <td className="p-3 font-mono text-xs">{l.id}</td>
                       <td className="p-3 font-medium">{l.business_name}<div className="text-xs text-slate-500">{l.business_gst}</div></td>
@@ -149,7 +223,7 @@ export default function CourierDashboard() {
                       </td>
                     </tr>
                   ))}
-                  {leads.length === 0 && <tr><td colSpan={7} className="p-10 text-center text-slate-500">No leads yet.</td></tr>}
+                  {otherLeads.length === 0 && <tr><td colSpan={7} className="p-10 text-center text-slate-500">No leads yet.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -210,18 +284,32 @@ export default function CourierDashboard() {
 
             <div className="border border-slate-200 rounded-sm overflow-hidden">
               <table className="w-full text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th className="p-3">Route</th><th className="p-3">Mode</th><th className="p-3">Slab</th><th className="p-3">Base</th><th className="p-3">Timeline</th><th></th></tr></thead>
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500"><tr><th className="p-3">Route</th><th className="p-3">Mode</th><th className="p-3">Slab</th><th className="p-3">Base</th><th className="p-3">Spot Price</th><th className="p-3">Timeline</th><th></th></tr></thead>
                 <tbody>
-                  {rateCards.map(r => (
-                    <tr key={r.id} className="border-t border-slate-200">
-                      <td className="p-3">{r.pickup_city} → {r.delivery_city}</td>
-                      <td className="p-3">{r.transport_mode}</td>
-                      <td className="p-3">{r.weight_slab}</td>
-                      <td className="p-3">₹{r.base_rate}/kg</td>
-                      <td className="p-3">{r.delivery_timeline}</td>
-                      <td className="p-3 text-right"><Button data-testid={`rc-del-${r.id}`} size="icon" variant="ghost" onClick={() => delRc(r.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button></td>
-                    </tr>
-                  ))}
+                  {rateCards.map(r => {
+                    const spotActive = r.spot_active && r.spot_starts_at && (new Date(r.spot_starts_at).getTime() + (r.spot_window_days || 5) * 86400000 > Date.now());
+                    const daysLeft = spotActive ? Math.max(0, Math.ceil((new Date(r.spot_starts_at).getTime() + (r.spot_window_days || 5) * 86400000 - Date.now()) / 86400000)) : 0;
+                    return (
+                      <tr key={r.id} className="border-t border-slate-200">
+                        <td className="p-3">{r.pickup_city} → {r.delivery_city}</td>
+                        <td className="p-3">{r.transport_mode}</td>
+                        <td className="p-3">{r.weight_slab}</td>
+                        <td className="p-3">₹{r.base_rate}/kg</td>
+                        <td className="p-3">
+                          {spotActive ? (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-amber-400 text-slate-900 rounded-sm text-[10px]">⚡ ₹{r.spot_rate} · {daysLeft}d</Badge>
+                              <button data-testid={`rc-spot-clear-${r.id}`} onClick={() => clearSpot(r.id)} className="text-xs text-slate-500 underline">clear</button>
+                            </div>
+                          ) : (
+                            <button data-testid={`rc-spot-set-${r.id}`} onClick={() => setSpot(r.id)} className="text-xs text-amber-700 hover:text-amber-900 font-semibold underline">+ Add Spot</button>
+                          )}
+                        </td>
+                        <td className="p-3">{r.delivery_timeline}</td>
+                        <td className="p-3 text-right"><Button data-testid={`rc-del-${r.id}`} size="icon" variant="ghost" onClick={() => delRc(r.id)}><Trash2 className="w-4 h-4 text-red-500" /></Button></td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

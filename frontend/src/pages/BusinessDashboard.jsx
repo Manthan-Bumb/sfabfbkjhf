@@ -45,19 +45,36 @@ export default function BusinessDashboard() {
             <div className="border border-slate-200 rounded-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
-                  <tr><th className="p-3">Lead ID</th><th className="p-3">Courier</th><th className="p-3">Route</th><th className="p-3">Weight</th><th className="p-3">Status</th></tr>
+                  <tr><th className="p-3">ID</th><th className="p-3">Type</th><th className="p-3">Courier</th><th className="p-3">Route</th><th className="p-3">Parcel</th><th className="p-3">Status</th></tr>
                 </thead>
                 <tbody>
                   {leads.map(l => (
                     <tr key={l.id} className="border-t border-slate-200" data-testid={`biz-lead-${l.id}`}>
                       <td className="p-3 font-mono text-xs">{l.id}</td>
+                      <td className="p-3">
+                        {l.is_booking
+                          ? <Badge className="bg-emerald-600 text-white rounded-sm text-[10px]">BOOKING</Badge>
+                          : l.action === "quote"
+                          ? <Badge variant="outline" className="rounded-sm border-slate-300 text-[10px]">QUOTE</Badge>
+                          : <Badge variant="outline" className="rounded-sm border-slate-300 text-[10px]">CALLBACK</Badge>}
+                      </td>
                       <td className="p-3 font-medium">{l.courier_name}</td>
-                      <td className="p-3 text-slate-600">{l.pickup_city} → {l.delivery_city}</td>
-                      <td className="p-3">{l.weight} kg</td>
-                      <td className="p-3"><Badge variant="outline" className="rounded-sm border-slate-300 text-[10px] uppercase">{l.status}</Badge></td>
+                      <td className="p-3 text-slate-600">{l.pickup_city} → {l.delivery_city}<div className="text-xs text-slate-400">{l.weight}kg · {l.transport_mode}</div></td>
+                      <td className="p-3 text-xs">
+                        {l.parcel_value > 0 && <div className="font-semibold">₹{Number(l.parcel_value).toLocaleString("en-IN")}</div>}
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          {l.insurance_required && <Badge className="bg-blue-600 text-white rounded-sm text-[9px]">INSURED</Badge>}
+                          {l.temperature_controlled && <Badge className="bg-cyan-600 text-white rounded-sm text-[9px]">❄ TEMP</Badge>}
+                        </div>
+                      </td>
+                      <td className="p-3">
+                        {l.is_booking
+                          ? <Badge className={`rounded-sm text-[10px] uppercase text-white ${l.booking_status === "approved" ? "bg-emerald-600" : l.booking_status === "rejected" ? "bg-red-600" : "bg-amber-500"}`}>{l.booking_status?.replace("_", " ")}</Badge>
+                          : <Badge variant="outline" className="rounded-sm border-slate-300 text-[10px] uppercase">{l.status}</Badge>}
+                      </td>
                     </tr>
                   ))}
-                  {leads.length === 0 && <tr><td colSpan={5} className="p-10 text-center text-slate-500">No requests yet. Search for couriers to get started.</td></tr>}
+                  {leads.length === 0 && <tr><td colSpan={6} className="p-10 text-center text-slate-500">No requests yet. Search for couriers to get started.</td></tr>}
                 </tbody>
               </table>
             </div>

@@ -7,10 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
-import { Timer, CheckCircle2 } from "lucide-react";
+import { Timer, CheckCircle2, Package2, ShieldCheck } from "lucide-react";
 
 const PARCEL_TYPES = ["Documents", "Electronics", "Industrial Goods", "Machinery", "Fragile Items", "FMCG", "Pharmaceuticals", "General Cargo", "Heavy Cargo"];
 const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"];
+const INSURANCE_PCT = 0.01; // 1% of parcel value
+
+const ACTION_TITLES = {
+  callback: "Request Callback",
+  quote: "Get Instant Quote",
+  booking: "Book Now",
+};
 
 export default function LeadModal({ open, onClose, courier, action, prefill = {} }) {
   const [form, setForm] = useState({
@@ -22,36 +29,40 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(3600);
+  const isBooking = action === "booking";
+  const insuranceAmount = form.insurance_required ? Math.round((Number(form.parcel_value) || 0) * INSURANCE_PCT) : 0;
 
   useEffect(() => {
-    if (open) {
-      setForm(f => ({ ...f, ...prefill }));
-      setCreated(null);
-    }
-    // eslint-disable-next-line
+    if (open) { setForm(f => ({ ...f, ...prefill })); setCreated(null); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
-    if (!created) return;
+    if (!created || isBooking) return;
     setSecondsLeft(3600);
     const t = setInterval(() => setSecondsLeft(s => Math.max(0, s - 1)), 1000);
     return () => clearInterval(t);
-  }, [created]);
+  }, [created, isBooking]);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const submit = async () => {
     if (!form.pickup_city || !form.delivery_city) { toast.error("Pickup & Delivery required"); return; }
+    if (isBooking) {
+      if (!form.parcel_value || Number(form.parcel_value) <= 0) { toast.error("Parcel value is required for booking"); return; }
+    }
     setSubmitting(true);
     try {
       const { data } = await api.post("/leads", {
-        ...form, weight: Number(form.weight),
+        ...form,
+        weight: Number(form.weight),
+        parcel_value: Number(form.parcel_value) || 0,
         courier_id: courier.id, action,
       });
       setCreated(data);
-      toast.success(`Lead ${data.id} created — courier will respond within 60 min`);
+      toast.success(isBooking ? `Booking ${data.id} submitted — awaiting courier approval` : `Lead ${data.id} created`);
     } catch (e) {
-      toast.error(e?.response?.data?.detail || "Failed to create lead");
+      toast.error(e?.response?.data?.detail || "Failed to create");
     } finally { setSubmitting(false); }
   };
 
@@ -59,31 +70,53 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent data-testid="lead-modal" className="max-w-2xl rounded-sm">
+      <DialogContent data-testid="lead-modal" className="max-w-2xl rounded-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display tracking-tight">
-            {created ? "Lead Created — SLA Active" : `${action === "quote" ? "Get Instant Quote" : "Request Callback"} · ${courier?.company_name}`}
+            {created
+              ? (isBooking ? "Booking Submitted · Pending Courier Approval" : "Lead Created — SLA Active")
+              : `${ACTION_TITLES[action] || "Request"} · ${courier?.company_name}`}
           </DialogTitle>
         </DialogHeader>
 
         {created ? (
-          <div className="space-y-4 pt-2">
-            <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-sm flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5" />
-              <div>
-                <div className="font-semibold text-emerald-900">Lead ID: {created.id}</div>
-                <div className="text-sm text-emerald-800 mt-1">Courier partner has been notified. You will hear back shortly.</div>
+          isBooking ? (
+            <div className="space-y-4 pt-2">
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-sm flex items-start gap-3">
+                <Package2 className="w-5 h-5 text-blue-600 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-blue-900">Booking ID: {created.id}</div>
+                  <div className="text-sm text-blue-800 mt-1">Status: <span className="font-semibold uppercase">{created.booking_status?.replace("_", " ")}</span></div>
+                  <div className="text-xs text-blue-700 mt-2">Track this booking from your Business Dashboard → Requests tab.</div>
+                </div>
               </div>
+              {created.insurance_required && (
+                <div className="border border-slate-200 p-3 rounded-sm text-sm flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-blue-600" /> Insurance included</span>
+                  <span className="font-semibold">₹{Number(created.insurance_amount || 0).toLocaleString("en-IN")}</span>
+                </div>
+              )}
+              <Button data-testid="lead-modal-close" onClick={onClose} className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-sm">Close</Button>
             </div>
-            <div className={`border ${secondsLeft < 900 ? "border-red-300 bg-red-50" : "border-slate-200 bg-slate-50"} p-4 rounded-sm flex items-center justify-between`}>
-              <div className="flex items-center gap-2">
-                <Timer className={`w-4 h-4 ${secondsLeft < 900 ? "text-red-600" : "text-slate-700"}`} />
-                <span className="label-eyebrow">Callback SLA</span>
+          ) : (
+            <div className="space-y-4 pt-2">
+              <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-sm flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-emerald-900">Lead ID: {created.id}</div>
+                  <div className="text-sm text-emerald-800 mt-1">Courier partner has been notified.</div>
+                </div>
               </div>
-              <span data-testid="lead-sla-timer" className={`font-display font-bold text-2xl ${secondsLeft < 900 ? "text-red-600" : "text-slate-900"}`}>{fmt(secondsLeft)}</span>
+              <div className={`border ${secondsLeft < 900 ? "border-red-300 bg-red-50" : "border-slate-200 bg-slate-50"} p-4 rounded-sm flex items-center justify-between`}>
+                <div className="flex items-center gap-2">
+                  <Timer className={`w-4 h-4 ${secondsLeft < 900 ? "text-red-600" : "text-slate-700"}`} />
+                  <span className="label-eyebrow">Callback SLA</span>
+                </div>
+                <span data-testid="lead-sla-timer" className={`font-display font-bold text-2xl ${secondsLeft < 900 ? "text-red-600" : "text-slate-900"}`}>{fmt(secondsLeft)}</span>
+              </div>
+              <Button data-testid="lead-modal-close" onClick={onClose} className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-sm">Close</Button>
             </div>
-            <Button data-testid="lead-modal-close" onClick={onClose} className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-sm">Close</Button>
-          </div>
+          )
         ) : (
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-3">
@@ -118,19 +151,18 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
                 </Select>
               </div>
             </div>
-            <div>
-              <Label className="label-eyebrow">Special Notes</Label>
-              <Textarea data-testid="lead-notes" value={form.notes} onChange={e => set("notes", e.target.value)} className="rounded-sm border-slate-300 mt-1.5" rows={3} />
-            </div>
 
             <div className="border-t border-slate-200 pt-4">
-              <div className="label-eyebrow mb-3">Parcel Details</div>
+              <div className="label-eyebrow mb-3">Parcel Details {isBooking && <span className="text-red-500 normal-case">· Required for booking</span>}</div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="label-eyebrow">Parcel Value (₹)</Label>
+                  <Label className="label-eyebrow">Parcel Value (₹) {isBooking && "*"}</Label>
                   <Input data-testid="lead-parcel-value" type="number" min="0" placeholder="e.g. 25000"
                     value={form.parcel_value} onChange={e => set("parcel_value", e.target.value)}
                     className="rounded-sm border-slate-300 mt-1.5" />
+                  {form.insurance_required && Number(form.parcel_value) > 0 && (
+                    <div className="text-[11px] text-blue-700 mt-1.5">+ Insurance premium: <b>₹{insuranceAmount.toLocaleString("en-IN")}</b> (1%)</div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" data-testid="lead-insurance-toggle"
@@ -148,8 +180,15 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
                 </div>
               </div>
             </div>
-            <Button data-testid="lead-submit-btn" disabled={submitting} onClick={submit} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-sm h-11">
-              {submitting ? "Sending..." : `Submit ${action === "quote" ? "Quote Request" : "Callback Request"}`}
+
+            <div>
+              <Label className="label-eyebrow">Special Notes</Label>
+              <Textarea data-testid="lead-notes" value={form.notes} onChange={e => set("notes", e.target.value)} className="rounded-sm border-slate-300 mt-1.5" rows={2} />
+            </div>
+
+            <Button data-testid="lead-submit-btn" disabled={submitting} onClick={submit}
+              className={`w-full rounded-sm h-11 text-white ${isBooking ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"}`}>
+              {submitting ? "Sending..." : (isBooking ? `Submit Booking Request` : `Submit ${action === "quote" ? "Quote Request" : "Callback Request"}`)}
             </Button>
           </div>
         )}
