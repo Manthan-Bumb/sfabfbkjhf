@@ -88,13 +88,22 @@ export default function CourierDashboard() {
     } catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
   };
 
-  const setSpot = async (rcId) => {
-    const rate = window.prompt("Spot rate (₹) — discounted rate for next 5 days:");
-    if (!rate) return;
-    const days = Number(window.prompt("Validity window (days)", "5")) || 5;
+  const [spotEditingId, setSpotEditingId] = useState(null);
+  const [spotDraft, setSpotDraft] = useState({ rate: "", days: 5 });
+
+  const setSpot = (rcId) => {
+    setSpotEditingId(rcId);
+    setSpotDraft({ rate: "", days: 5 });
+  };
+
+  const saveSpot = async (rcId) => {
+    const rate = Number(spotDraft.rate);
+    const days = Number(spotDraft.days) || 5;
+    if (!rate || rate <= 0) { toast.error("Enter a valid spot rate"); return; }
     try {
-      await api.post(`/courier/rate-cards/${rcId}/spot`, { spot_rate: Number(rate), window_days: days });
+      await api.post(`/courier/rate-cards/${rcId}/spot`, { spot_rate: rate, window_days: days });
       toast.success("Spot price activated");
+      setSpotEditingId(null);
       load();
     } catch (e) { toast.error(e?.response?.data?.detail || "Failed"); }
   };
@@ -307,6 +316,13 @@ export default function CourierDashboard() {
                             <div className="flex items-center gap-2">
                               <Badge className="bg-amber-400 text-slate-900 rounded-sm text-[10px]">⚡ ₹{r.spot_rate} · {daysLeft}d</Badge>
                               <button data-testid={`rc-spot-clear-${r.id}`} onClick={() => clearSpot(r.id)} className="text-xs text-slate-500 underline">clear</button>
+                            </div>
+                          ) : spotEditingId === r.id ? (
+                            <div className="flex items-center gap-1.5">
+                              <Input data-testid={`rc-spot-rate-${r.id}`} type="number" placeholder="₹/kg" className="rounded-sm border-slate-300 h-8 w-20 text-xs" value={spotDraft.rate} onChange={e => setSpotDraft({...spotDraft, rate: e.target.value})} autoFocus />
+                              <Input data-testid={`rc-spot-days-${r.id}`} type="number" placeholder="days" className="rounded-sm border-slate-300 h-8 w-14 text-xs" value={spotDraft.days} onChange={e => setSpotDraft({...spotDraft, days: e.target.value})} />
+                              <Button data-testid={`rc-spot-save-${r.id}`} size="sm" onClick={() => saveSpot(r.id)} className="bg-amber-500 hover:bg-amber-600 text-white rounded-sm h-8 px-2 text-xs">Save</Button>
+                              <button onClick={() => setSpotEditingId(null)} className="text-xs text-slate-500">×</button>
                             </div>
                           ) : (
                             <button data-testid={`rc-spot-set-${r.id}`} onClick={() => setSpot(r.id)} className="text-xs text-amber-700 hover:text-amber-900 font-semibold underline">+ Add Spot</button>

@@ -3,9 +3,12 @@ import { Star, Lock, Truck, Phone, Mail, Clock, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CourierCard({ c, onAction }) {
-  const locked = c.locked;
+  const { user } = useAuth();
+  // Belt-and-suspenders: server sends `locked=true` for non-business/anon; also enforce client-side.
+  const locked = c.locked || !user || user.role !== "business";
   return (
     <div data-testid={`courier-card-${c.id}`} className="border border-slate-200 hover:border-blue-300 transition-all rounded-sm bg-white p-5 hover:-translate-y-0.5 hover:shadow-md duration-300 relative">
       {c.spot_price && (

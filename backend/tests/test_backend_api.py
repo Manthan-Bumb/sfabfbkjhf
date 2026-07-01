@@ -4,7 +4,7 @@ import os, uuid, requests, pytest
 BASE = os.environ.get("REACT_APP_BACKEND_URL") or open("/app/frontend/.env").read().split("REACT_APP_BACKEND_URL=")[1].split("\n")[0].strip()
 BASE = BASE.rstrip("/")
 
-ADMIN = ("admin@logimarket.in", "admin@123")
+ADMIN = ("admin@logscanner.in", "admin@123")
 COURIER = ("bluedartexpress@partner.in", "partner@123")
 
 session = requests.Session()
