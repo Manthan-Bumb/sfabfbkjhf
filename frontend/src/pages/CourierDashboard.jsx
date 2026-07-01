@@ -162,7 +162,7 @@ export default function CourierDashboard() {
                       </td>
                       <td className="p-3">
                         <div className="flex flex-col gap-1">
-                          {b.insurance_required && <Badge className="bg-blue-600 text-white rounded-sm text-[9px] w-fit">INSURED ₹{Number(b.insurance_amount || 0).toLocaleString("en-IN")}</Badge>}
+                          {b.insurance_required && <Badge className="bg-blue-600 text-white rounded-sm text-[9px] w-fit">INSURED</Badge>}
                           {b.temperature_controlled && <Badge className="bg-cyan-600 text-white rounded-sm text-[9px] w-fit">❄ TEMP</Badge>}
                         </div>
                       </td>

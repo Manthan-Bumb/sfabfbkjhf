@@ -433,8 +433,6 @@ async def create_lead(data: LeadIn, user=Depends(require_user)):
         raise HTTPException(404, "Courier not found")
     is_booking = data.action == "booking"
     lead_id = ("BOOK-" if is_booking else "LEAD-") + str(uuid.uuid4())[:8].upper()
-    # Auto-calc insurance amount (1% of parcel value) if insurance is opted
-    insurance_amount = round((data.parcel_value or 0) * 0.01, 2) if data.insurance_required else 0
     lead = {
         "id": lead_id,
         "business_id": user["id"],
@@ -459,7 +457,6 @@ async def create_lead(data: LeadIn, user=Depends(require_user)):
         "action": data.action,
         "parcel_value": data.parcel_value or 0,
         "insurance_required": bool(data.insurance_required),
-        "insurance_amount": insurance_amount,
         "temperature_controlled": bool(data.temperature_controlled),
         "is_booking": is_booking,
         "booking_status": "pending_approval" if is_booking else None,

@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { Timer, CheckCircle2, Package2, ShieldCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 const PARCEL_TYPES = ["Documents", "Electronics", "Industrial Goods", "Machinery", "Fragile Items", "FMCG", "Pharmaceuticals", "General Cargo", "Heavy Cargo"];
 const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo"];
-const INSURANCE_PCT = 0.01; // 1% of parcel value
+const INSURANCE_PCT = 0; // insurance is yes/no only — no premium calc
 
 const ACTION_TITLES = {
   callback: "Request Callback",
@@ -30,7 +31,6 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
   const [created, setCreated] = useState(null);
   const [secondsLeft, setSecondsLeft] = useState(3600);
   const isBooking = action === "booking";
-  const insuranceAmount = form.insurance_required ? Math.round((Number(form.parcel_value) || 0) * INSURANCE_PCT) : 0;
 
   useEffect(() => {
     if (open) { setForm(f => ({ ...f, ...prefill })); setCreated(null); }
@@ -92,8 +92,8 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
               </div>
               {created.insurance_required && (
                 <div className="border border-slate-200 p-3 rounded-sm text-sm flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-blue-600" /> Insurance included</span>
-                  <span className="font-semibold">₹{Number(created.insurance_amount || 0).toLocaleString("en-IN")}</span>
+                  <span className="flex items-center gap-2 text-slate-700"><ShieldCheck className="w-4 h-4 text-blue-600" /> Insurance opted</span>
+                  <Badge className="bg-blue-600 text-white rounded-sm text-[10px]">INSURED</Badge>
                 </div>
               )}
               <Button data-testid="lead-modal-close" onClick={onClose} className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-sm">Close</Button>
@@ -160,9 +160,6 @@ export default function LeadModal({ open, onClose, courier, action, prefill = {}
                   <Input data-testid="lead-parcel-value" type="number" min="0" placeholder="e.g. 25000"
                     value={form.parcel_value} onChange={e => set("parcel_value", e.target.value)}
                     className="rounded-sm border-slate-300 mt-1.5" />
-                  {form.insurance_required && Number(form.parcel_value) > 0 && (
-                    <div className="text-[11px] text-blue-700 mt-1.5">+ Insurance premium: <b>₹{insuranceAmount.toLocaleString("en-IN")}</b> (1%)</div>
-                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" data-testid="lead-insurance-toggle"
