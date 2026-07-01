@@ -165,16 +165,14 @@ class LeadIn(BaseModel):
 
 
 # ============== Constants ==============
-WEIGHT_SLABS = ["1-100 KG", "101-500 KG", "501-1000 KG", "1001-5000 KG", "5001+ KG"]
-TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"]
+WEIGHT_SLABS = ["1-100 KG", "101-500 KG", "501-1000 KG"]
+TRANSPORT_MODES = ["Air Cargo", "Rail Cargo"]
 PARCEL_TYPES = ["Documents", "Electronics", "Industrial Goods", "Machinery", "Fragile Items", "FMCG", "Pharmaceuticals", "General Cargo", "Heavy Cargo"]
 
 def slab_for_weight(w: float) -> str:
     if w <= 100: return "1-100 KG"
     if w <= 500: return "101-500 KG"
-    if w <= 1000: return "501-1000 KG"
-    if w <= 5000: return "1001-5000 KG"
-    return "5001+ KG"
+    return "501-1000 KG"
 
 
 # ============== Auth endpoints ==============
@@ -507,12 +505,23 @@ async def get_lead(lead_id: str, user=Depends(require_user)):
 @api.patch("/leads/{lead_id}/status")
 async def update_lead_status(lead_id: str, payload: Dict[str, Any], user=Depends(require_user)):
     new_status = payload.get("status")
-    if new_status not in ["new", "callback_pending", "contacted", "quote_sent", "won", "lost", "expired"]:
+    if new_status not in ["new", "callback_pending", "contacted", "accepted", "declined", "quote_sent", "won", "lost", "expired"]:
         raise HTTPException(400, "Invalid status")
     lead = await db.leads.find_one({"id": lead_id})
     if not lead or (lead["courier_id"] != user["id"] and user["role"] != "admin"):
         raise HTTPException(403, "Forbidden")
     await db.leads.update_one({"id": lead_id}, {"$set": {"status": new_status, "updated_at": now_iso()}})
+    if new_status in ["accepted", "declined"]:
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "user_id": lead.get("business_id"),
+            "type": "lead_decision",
+            "title": f"Request {new_status.upper()}",
+            "body": f"{lead.get('courier_name')} has {new_status} your {lead.get('action')} request {lead_id}.",
+            "lead_id": lead_id,
+            "read": False, "channel": "in_app", "status": "delivered",
+            "created_at": now_iso(),
+        })
     return {"success": True}
 
 @api.patch("/bookings/{lead_id}/decision")
@@ -913,7 +922,7 @@ async def seed_db():
                 "mobile_verified": True, "email_verified": True, "gst_verified": True,
                 "admin_approved": True, "status": "active",
                 "rating": rating, "is_premium": premium, "is_featured": premium,
-                "transport_modes": ["Road Transport"] + (["Air Cargo", "Rail Cargo"] if premium else []),
+                "transport_modes": ["Rail Cargo"] + (["Air Cargo"] if premium else []),
                 "created_at": now_iso(),
             })
             await db.coverage.insert_one({
@@ -924,16 +933,16 @@ async def seed_db():
             for pc in cities[:3]:
                 for dc in cities:
                     if pc == dc: continue
-                    for mode in ["Road Transport"]:
-                        for slab in WEIGHT_SLABS[:3]:
-                            base = {"1-100 KG": 35, "101-500 KG": 28, "501-1000 KG": 22}[slab]
-                            base += random.randint(-5, 8)
+                    for mode in ["Air Cargo", "Rail Cargo"]:
+                        for slab in WEIGHT_SLABS:
+                            base = {"1-100 KG": 55, "101-500 KG": 42, "501-1000 KG": 32}[slab]
+                            base += random.randint(-5, 8) + (25 if mode == "Air Cargo" else 0)
                             await db.rate_cards.insert_one({
                                 "id": str(uuid.uuid4()),
                                 "courier_id": uid,
                                 "pickup_city": pc, "delivery_city": dc,
                                 "transport_mode": mode, "weight_slab": slab,
-                                "delivery_timeline": "3-5 days",
+                                "delivery_timeline": "1-2 days" if mode == "Air Cargo" else "4-6 days",
                                 "pricing_type": "per_kg",
                                 "base_rate": base, "min_charge": 500,
                                 "fuel_pct": 8, "handling": 50, "insurance_pct": 0.5,
@@ -942,8 +951,36 @@ async def seed_db():
                             })
         logger.info("Seeded courier partners and rate cards")
 
-    # Cleanup: remove rate cards with deprecated transport modes
-    await db.rate_cards.delete_many({"transport_mode": {"$in": ["Surface Cargo", "Express Delivery"]}})
+    # Cleanup: remove rate cards with deprecated transport modes / slabs
+    await db.rate_cards.delete_many({"transport_mode": {"$in": ["Surface Cargo", "Express Delivery", "Road Transport"]}})
+    await db.rate_cards.delete_many({"weight_slab": {"$in": ["1001-5000 KG", "5001+ KG"]}})
+    # Strip Road Transport from courier `transport_modes` arrays
+    await db.users.update_many({"role": "courier"}, {"$pull": {"transport_modes": {"$in": ["Road Transport", "Surface Cargo", "Express Delivery"]}}})
+
+    # Re-seed Air/Rail rate cards for any approved courier whose rate card count is 0
+    async for c in db.users.find({"role": "courier", "admin_approved": True}, {"id": 1, "company_name": 1}):
+        count = await db.rate_cards.count_documents({"courier_id": c["id"]})
+        if count > 0: continue
+        cov = await db.coverage.find_one({"courier_id": c["id"]}, {"cities": 1}) or {}
+        cities = (cov.get("cities") or [])[:6]
+        for pc in cities[:3]:
+            for dc in cities:
+                if pc == dc: continue
+                for mode in ["Air Cargo", "Rail Cargo"]:
+                    for slab in WEIGHT_SLABS:
+                        base = {"1-100 KG": 55, "101-500 KG": 42, "501-1000 KG": 32}[slab]
+                        base += random.randint(-5, 8) + (25 if mode == "Air Cargo" else 0)
+                        await db.rate_cards.insert_one({
+                            "id": str(uuid.uuid4()), "courier_id": c["id"],
+                            "pickup_city": pc, "delivery_city": dc,
+                            "transport_mode": mode, "weight_slab": slab,
+                            "delivery_timeline": "1-2 days" if mode == "Air Cargo" else "4-6 days",
+                            "pricing_type": "per_kg",
+                            "base_rate": base, "min_charge": 500,
+                            "fuel_pct": 8, "handling": 50, "insurance_pct": 0.5,
+                            "pickup_charge": 100, "delivery_charge": 100,
+                            "created_at": now_iso(),
+                        })
 
     # Normalize cities in coverage + rate_cards (one-time migration)
     async for cov in db.coverage.find({}, {"_id": 1, "cities": 1, "states": 1}):
@@ -988,7 +1025,7 @@ async def seed_db():
             "mobile_verified": True, "email_verified": True, "gst_verified": True,
             "admin_approved": True, "status": "active",
             "rating": 4.6, "is_premium": True, "is_featured": True,
-            "transport_modes": ["Road Transport", "Air Cargo", "Rail Cargo"],
+            "transport_modes": ["Air Cargo", "Rail Cargo"],
             "created_at": now_iso(),
         })
         await db.coverage.insert_one({
@@ -996,14 +1033,14 @@ async def seed_db():
             "states": ["Maharashtra", "Karnataka", "Telangana", "Tamil Nadu", "Delhi"],
             "cities": cities, "pincodes": [],
         })
-        # Pre-seed 6 rate cards from Mumbai to all others
+        # Pre-seed 6 rate cards from Mumbai to all others (Rail Cargo)
         for dc in cities[1:]:
             await db.rate_cards.insert_one({
                 "id": str(uuid.uuid4()), "courier_id": dcid,
                 "pickup_city": "Mumbai", "delivery_city": dc,
-                "transport_mode": "Road Transport", "weight_slab": "1-100 KG",
-                "delivery_timeline": "3-5 days", "pricing_type": "per_kg",
-                "base_rate": 32, "min_charge": 500,
+                "transport_mode": "Rail Cargo", "weight_slab": "1-100 KG",
+                "delivery_timeline": "4-6 days", "pricing_type": "per_kg",
+                "base_rate": 42, "min_charge": 500,
                 "fuel_pct": 8, "handling": 50, "insurance_pct": 0.5,
                 "pickup_charge": 100, "delivery_charge": 100,
                 "created_at": now_iso(),

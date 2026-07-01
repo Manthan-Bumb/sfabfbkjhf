@@ -12,8 +12,8 @@ import { Inbox, FileText, MapPin, AlertCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeCity } from "@/lib/cities";
 
-const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"];
-const SLABS = ["1-100 KG", "101-500 KG", "501-1000 KG", "1001-5000 KG", "5001+ KG"];
+const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo"];
+const SLABS = ["1-100 KG", "101-500 KG", "501-1000 KG"];
 
 export default function CourierDashboard() {
   const { user } = useAuth();
@@ -21,7 +21,7 @@ export default function CourierDashboard() {
   const [leads, setLeads] = useState([]);
   const [rateCards, setRateCards] = useState([]);
   const [coverage, setCoverage] = useState({ states: [], cities: [], pincodes: [] });
-  const [rcForm, setRcForm] = useState({ pickup_city: "", delivery_city: "", transport_mode: "Road Transport", weight_slab: "1-100 KG", delivery_timeline: "3-5 days", pricing_type: "per_kg", base_rate: 30, min_charge: 500, fuel_pct: 8, handling: 50, insurance_pct: 0.5, pickup_charge: 100, delivery_charge: 100 });
+  const [rcForm, setRcForm] = useState({ pickup_city: "", delivery_city: "", transport_mode: "Rail Cargo", weight_slab: "1-100 KG", delivery_timeline: "4-6 days", pricing_type: "per_kg", base_rate: 30, min_charge: 500, fuel_pct: 8, handling: 50, insurance_pct: 0.5, pickup_charge: 100, delivery_charge: 100 });
   const [covInput, setCovInput] = useState({ city: "", state: "", pincode: "" });
   const [quickCity, setQuickCity] = useState("");
 
@@ -193,37 +193,44 @@ export default function CourierDashboard() {
             <div className="border border-slate-200 rounded-sm overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs uppercase tracking-wider text-slate-500">
-                  <tr><th className="p-3">Lead</th><th className="p-3">Business</th><th className="p-3">Route</th><th className="p-3">Parcel</th><th className="p-3">Special</th><th className="p-3">Contact</th><th className="p-3">Action</th></tr>
+                  <tr><th className="p-3">Lead</th><th className="p-3">Type</th><th className="p-3">Business</th><th className="p-3">Route</th><th className="p-3">Parcel</th><th className="p-3">Contact</th><th className="p-3">Decision</th><th className="p-3">Status</th></tr>
                 </thead>
                 <tbody>
                   {otherLeads.map(l => (
                     <tr key={l.id} className="border-t border-slate-200" data-testid={`cd-lead-${l.id}`}>
                       <td className="p-3 font-mono text-xs">{l.id}</td>
+                      <td className="p-3"><Badge variant="outline" className="rounded-sm border-slate-300 text-[9px] uppercase">{l.action}</Badge></td>
                       <td className="p-3 font-medium">{l.business_name}<div className="text-xs text-slate-500">{l.business_gst}</div></td>
-                      <td className="p-3 text-slate-600">{l.pickup_city} → {l.delivery_city}</td>
+                      <td className="p-3 text-slate-600">{l.pickup_city} → {l.delivery_city}<div className="text-xs text-slate-400">{l.weight}kg · {l.transport_mode}</div></td>
                       <td className="p-3 text-xs">
-                        <div>{l.weight} kg · {l.parcel_type}</div>
-                        {l.parcel_value > 0 && <div className="text-slate-500">Value ₹{Number(l.parcel_value).toLocaleString("en-IN")}</div>}
-                      </td>
-                      <td className="p-3">
-                        <div className="flex flex-col gap-1">
-                          {l.insurance_required && <Badge className="bg-blue-600 text-white rounded-sm text-[9px] w-fit">INSURED</Badge>}
-                          {l.temperature_controlled && <Badge className="bg-cyan-600 text-white rounded-sm text-[9px] w-fit">❄ TEMP</Badge>}
-                          {!l.insurance_required && !l.temperature_controlled && <span className="text-xs text-slate-400">—</span>}
+                        {l.parcel_value > 0 && <div className="font-semibold">₹{Number(l.parcel_value).toLocaleString("en-IN")}</div>}
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          {l.insurance_required && <Badge className="bg-blue-600 text-white rounded-sm text-[9px]">INSURED</Badge>}
+                          {l.temperature_controlled && <Badge className="bg-cyan-600 text-white rounded-sm text-[9px]">❄ TEMP</Badge>}
                         </div>
                       </td>
                       <td className="p-3 text-xs"><div>{l.business_mobile}</div><div className="text-slate-500">{l.business_email}</div></td>
+                      <td className="p-3 whitespace-nowrap">
+                        {["accepted", "declined"].includes(l.status) ? (
+                          <Badge className={`rounded-sm text-[10px] uppercase text-white ${l.status === "accepted" ? "bg-emerald-600" : "bg-red-600"}`}>{l.status}</Badge>
+                        ) : (
+                          <div className="flex gap-1.5">
+                            <Button data-testid={`cd-lead-accept-${l.id}`} size="sm" onClick={() => updateStatus(l.id, "accepted")} className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-sm h-7 px-2 text-xs">Accept</Button>
+                            <Button data-testid={`cd-lead-decline-${l.id}`} size="sm" variant="outline" onClick={() => updateStatus(l.id, "declined")} className="rounded-sm border-slate-300 h-7 px-2 text-xs">Decline</Button>
+                          </div>
+                        )}
+                      </td>
                       <td className="p-3">
                         <Select value={l.status} onValueChange={(v) => updateStatus(l.id, v)}>
                           <SelectTrigger data-testid={`cd-lead-status-${l.id}`} className="rounded-sm border-slate-300 w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            {["new","callback_pending","contacted","quote_sent","won","lost","expired"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                            {["new","callback_pending","contacted","accepted","declined","quote_sent","won","lost","expired"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </td>
                     </tr>
                   ))}
-                  {otherLeads.length === 0 && <tr><td colSpan={7} className="p-10 text-center text-slate-500">No leads yet.</td></tr>}
+                  {otherLeads.length === 0 && <tr><td colSpan={8} className="p-10 text-center text-slate-500">No leads yet.</td></tr>}
                 </tbody>
               </table>
             </div>

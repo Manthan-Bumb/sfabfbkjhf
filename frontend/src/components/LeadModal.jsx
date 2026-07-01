@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { Timer, CheckCircle2, Package2, ShieldCheck } from "lucide-react";
 
 const PARCEL_TYPES = ["Documents", "Electronics", "Industrial Goods", "Machinery", "Fragile Items", "FMCG", "Pharmaceuticals", "General Cargo", "Heavy Cargo"];
-const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo", "Road Transport"];
+const TRANSPORT_MODES = ["Air Cargo", "Rail Cargo"];
 const INSURANCE_PCT = 0.01; // 1% of parcel value
 
 const ACTION_TITLES = {
@@ -22,7 +22,7 @@ const ACTION_TITLES = {
 export default function LeadModal({ open, onClose, courier, action, prefill = {} }) {
   const [form, setForm] = useState({
     pickup_city: "", delivery_city: "", weight: 100,
-    parcel_type: "General Cargo", transport_mode: "Road Transport",
+    parcel_type: "General Cargo", transport_mode: "Rail Cargo",
     dispatch_date: "", notes: "",
     parcel_value: "", insurance_required: false, temperature_controlled: false,
   });
